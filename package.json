@@ -14,7 +14,8 @@
 		"tsconfig",
 		".prettierrc.json",
 		"index.js",
-		"CHANGELOG.md"
+		"CHANGELOG.md",
+		"webpack.*"
 	],
 	"dependencies": {
 		"@typescript-eslint/eslint-plugin": "^5.30.5",
