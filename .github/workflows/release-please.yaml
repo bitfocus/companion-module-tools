@@ -19,12 +19,6 @@ jobs:
         with:
           node-version: 14
         if: ${{ steps.release.outputs.release_created }}
-      - run: npm install
-        if: ${{ steps.release.outputs.release_created }}
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        if: ${{ steps.release.outputs.release_created }}
 
       - name: Check release is desired
         id: do-publish
@@ -56,13 +50,6 @@ jobs:
             fi
 
           fi
-      - name: Prepare build
-        if: ${{ steps.do-publish.outputs.tag }}
-        run: |
-          yarn install
-          yarn build
-        env:
-          CI: true
       - name: Publish to NPM
         if: ${{ steps.do-publish.outputs.tag }}
         run: |
