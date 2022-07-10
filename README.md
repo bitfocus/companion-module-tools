@@ -7,3 +7,7 @@ This is a collection of tools, used for developing and verifying Companion modul
 ### companion-module-build
 
 When used, this will build a module ready for distibution
+
+### companion-generate-manifest
+
+Generate the new format manifest from an old package.json
