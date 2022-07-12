@@ -31,8 +31,13 @@ await $`yarn webpack -c ${webpackConfig}`
 // copy in the metadata
 await fs.copy('companion', 'pkg/companion')
 
+const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
+const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
+
 const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))
 manifestJson.runtime.entrypoint = '../main.js'
+manifestJson.version = srcPackageJson.version
+manifestJson.runtime.apiVersion = frameworkPackageJson.version
 await fs.writeFile(path.resolve('./pkg/companion/manifest.json'), JSON.stringify(manifestJson))
 
 // Generate a minimal package.json

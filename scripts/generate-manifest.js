@@ -40,7 +40,7 @@ const manifest = {
 	name: pkgJson.name,
 	shortname: pkgJson.shortname ?? pkgJson.name,
 	description: pkgJson.description ?? pkgJson.name,
-	version: pkgJson.version ?? '0.0.0',
+	version: '0.0.0',
 	license: pkgJson.license,
 	repository: pkgJson.repository?.url ?? `https://github.com/bitfocus/companion-module-${pkgJson.name}.git`,
 	bugs: pkgJson.bugs?.url ?? `https://github.com/bitfocus/companion-module-${pkgJson.name}/issues`,
@@ -50,6 +50,7 @@ const manifest = {
 	runtime: {
 		type: 'node14',
 		api: 'socket.io',
+		apiVersion: '0.0.0',
 
 		entrypoint: path.join('../', pkgJson.main || 'index.js'),
 		// universal: boolean
