@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.0](https://github.com/bitfocus/companion-module-tools/compare/v0.0.2...v0.1.0) (2022-07-12)
+
+
+### Features
+
+* add runtime.apiVersion to manifest ([b42703b](https://github.com/bitfocus/companion-module-tools/commit/b42703b5bac6e2cb6addc8e71239c24e26c43b90))
+* remove husky & lint-staged ([7b71d84](https://github.com/bitfocus/companion-module-tools/commit/7b71d84cb8850242846d5118f651fd7ae129615c))
+
+
+### Bug Fixes
+
+* set `importHelpers: false` for recommended tsconfig ([1b04d89](https://github.com/bitfocus/companion-module-tools/commit/1b04d89bc50922466dffb416b4ed3b4acf63be71))
+* set version field in manifest when generating pkg.tgz ([b42703b](https://github.com/bitfocus/companion-module-tools/commit/b42703b5bac6e2cb6addc8e71239c24e26c43b90))
+* update @companion-module/base ([33df2a6](https://github.com/bitfocus/companion-module-tools/commit/33df2a61796954c30c01e25a5f08a2a1bd874e64))
+
 ## [0.0.2](https://github.com/bitfocus/companion-module-tools/compare/v0.0.1...v0.0.2) (2022-07-10)
 
 
