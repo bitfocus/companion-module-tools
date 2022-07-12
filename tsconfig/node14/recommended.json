@@ -9,7 +9,7 @@
 			"*": ["../node_modules/*"]
 		},
 		"declaration": false,
-		"importHelpers": true,
+		"importHelpers": false,
 		"listFiles": false,
 		"traceResolution": false,
 		"pretty": true,
