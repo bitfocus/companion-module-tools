@@ -32,6 +32,6 @@
 		"zx": "^4.3.0"
 	},
 	"peerDependencies": {
-		"@companion-module/base": "^0.0.3"
+		"@companion-module/base": "^0.1.0"
 	}
 }
