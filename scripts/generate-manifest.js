@@ -36,7 +36,7 @@ if (Array.isArray(pkgJson.contributors)) {
 }
 
 const manifest = {
-	id: `bitfocus.${pkgJson.name}`,
+	id: pkgJson.name,
 	name: pkgJson.name,
 	shortname: pkgJson.shortname ?? pkgJson.name,
 	description: pkgJson.description ?? pkgJson.name,
@@ -45,7 +45,7 @@ const manifest = {
 	repository: pkgJson.repository?.url ?? `https://github.com/bitfocus/companion-module-${pkgJson.name}.git`,
 	bugs: pkgJson.bugs?.url ?? `https://github.com/bitfocus/companion-module-${pkgJson.name}/issues`,
 	maintainers: maintainers,
-	legacyIds: [...(pkgJson.legacy || []), pkgJson.name],
+	legacyIds: [...(pkgJson.legacy || [])],
 
 	runtime: {
 		type: 'node14',
