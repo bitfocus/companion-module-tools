@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/bitfocus/companion-module-tools/compare/v0.1.0...v0.1.1) (2022-07-21)
+
+
+### Bug Fixes
+
+* don't rename modules ([0d35f51](https://github.com/bitfocus/companion-module-tools/commit/0d35f510cf24333b753d8b34a5c4af27623fcaed))
+
 ## [0.1.0](https://github.com/bitfocus/companion-module-tools/compare/v0.0.2...v0.1.0) (2022-07-12)
 
 
