@@ -6,6 +6,7 @@
 	"license": "MIT",
 	"bin": {
 		"companion-module-build": "scripts/build.js",
+		"companion-module-check": "scripts/check.js",
 		"companion-generate-manifest": "scripts/generate-manifest.js"
 	},
 	"files": [

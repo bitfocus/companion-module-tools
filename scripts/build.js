@@ -40,6 +40,14 @@ manifestJson.version = srcPackageJson.version
 manifestJson.runtime.apiVersion = frameworkPackageJson.version
 await fs.writeFile(path.resolve('./pkg/companion/manifest.json'), JSON.stringify(manifestJson))
 
+// Make sure the manifest is valid
+try {
+	validateManifest(manifestJson)
+} catch (e) {
+	console.error('Manifest validation failed', e)
+	process.exit(1)
+}
+
 // Generate a minimal package.json
 const packageJson = {
 	name: manifestJson.name,
