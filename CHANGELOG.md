@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/bitfocus/companion-module-tools/compare/v0.1.1...v0.2.0) (2022-09-04)
+
+
+### Features
+
+* update @companion-module/base ([97742a5](https://github.com/bitfocus/companion-module-tools/commit/97742a58a71e09a93988f0288e661bd5171f14ba))
+
 ## [0.1.1](https://github.com/bitfocus/companion-module-tools/compare/v0.1.0...v0.1.1) (2022-07-21)
 
 
