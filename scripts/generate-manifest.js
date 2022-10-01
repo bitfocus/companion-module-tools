@@ -35,6 +35,9 @@ if (Array.isArray(pkgJson.contributors)) {
 	}
 }
 
+let products = pkgJson.products || pkgJson.product || []
+if (typeof products === 'string') products = [products]
+
 const manifest = {
 	id: pkgJson.name,
 	name: pkgJson.name,
@@ -57,7 +60,7 @@ const manifest = {
 	},
 
 	manufacturer: pkgJson.manufacturer ?? '',
-	products: pkgJson.products ?? (pkgJson.product ? [pkgJson.product] : []),
+	products: products,
 	keywords: pkgJson.keywords || [],
 }
 
