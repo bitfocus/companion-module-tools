@@ -4,6 +4,7 @@ import path from 'path'
 import { fs } from 'zx'
 import { findUp } from 'find-up'
 import * as tar from 'tar'
+import { validateManifest } from '@companion-module/base'
 
 async function findModuleDir(cwd) {
 	const stat = await fs.stat(cwd)
