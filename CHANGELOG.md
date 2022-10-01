@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/bitfocus/companion-module-tools/compare/v0.3.0...v0.3.1) (2022-10-01)
+
+
+### Bug Fixes
+
+* errors ([26af195](https://github.com/bitfocus/companion-module-tools/commit/26af195288010c759dd354fc3d9e9d1946a1a16d))
+
 ## [0.3.0](https://github.com/bitfocus/companion-module-tools/compare/v0.2.0...v0.3.0) (2022-10-01)
 
 
