@@ -37,6 +37,7 @@ const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir
 const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))
 manifestJson.runtime.entrypoint = '../main.js'
 manifestJson.version = srcPackageJson.version
+manifestJson.runtime.api = 'nodejs-ipc'
 manifestJson.runtime.apiVersion = frameworkPackageJson.version
 await fs.writeFile(path.resolve('./pkg/companion/manifest.json'), JSON.stringify(manifestJson))
 

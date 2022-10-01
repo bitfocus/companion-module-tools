@@ -52,7 +52,7 @@ const manifest = {
 
 	runtime: {
 		type: 'node14',
-		api: 'socket.io',
+		api: 'nodejs-ipc',
 		apiVersion: '0.0.0',
 
 		entrypoint: path.join('../', pkgJson.main || 'index.js'),
