@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/bitfocus/companion-module-tools/compare/v0.2.0...v0.3.0) (2022-10-01)
+
+
+### Features
+
+* validateManifest before building module ([0166c7d](https://github.com/bitfocus/companion-module-tools/commit/0166c7da0ed725de77e3c71bc7992f8fd9deba94))
+
+
+### Bug Fixes
+
+* generating of manifest incorrectly processing 'products' field ([5f5ad9e](https://github.com/bitfocus/companion-module-tools/commit/5f5ad9e802249e4c9fe60ad8eb2278c715fa0a15))
+* update runtime.api in conversion script ([ce95e96](https://github.com/bitfocus/companion-module-tools/commit/ce95e96626023e11ec7fe460278a3418dc6f0eaf))
+
 ## [0.2.0](https://github.com/bitfocus/companion-module-tools/compare/v0.1.1...v0.2.0) (2022-09-04)
 
 
