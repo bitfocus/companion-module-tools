@@ -41,10 +41,10 @@ module.exports = {
 	},
 	module: {
 		rules: [
-			{
-				test: /\.json$/,
-				type: 'asset/inline',
-			},
+			// {
+			// 	test: /\.json$/,
+			// 	type: 'asset/source',
+			// },
 			// {
 			// 	test: /BUILD$/,
 			// 	type: 'asset/resource',
