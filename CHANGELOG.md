@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/bitfocus/companion-module-tools/compare/v0.3.1...v0.3.2) (2022-10-11)
+
+
+### Bug Fixes
+
+* preserve json files ([6d464b5](https://github.com/bitfocus/companion-module-tools/commit/6d464b5dc30f961e053de71d64ec07e005c542a5))
+
 ## [0.3.1](https://github.com/bitfocus/companion-module-tools/compare/v0.3.0...v0.3.1) (2022-10-01)
 
 
