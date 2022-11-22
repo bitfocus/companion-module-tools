@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/bitfocus/companion-module-tools/compare/v0.3.2...v0.3.3) (2022-11-22)
+
+
+### Bug Fixes
+
+* tsconfig recommends commonjs ([1851276](https://github.com/bitfocus/companion-module-tools/commit/1851276f725254ba1338a9d30d8cd32e7dea31b9))
+
 ## [0.3.2](https://github.com/bitfocus/companion-module-tools/compare/v0.3.1...v0.3.2) (2022-10-11)
 
 
