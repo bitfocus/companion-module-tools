@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/bitfocus/companion-module-tools/compare/v0.4.0...v0.4.1) (2022-11-26)
+
+
+### Bug Fixes
+
+* updated tsconfig ([6dd1a05](https://github.com/bitfocus/companion-module-tools/commit/6dd1a0544e5d9f784f276485cb9254b35195f3c1))
+
 ## [0.4.0](https://github.com/bitfocus/companion-module-tools/compare/v0.3.3...v0.4.0) (2022-11-26)
 
 
