@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/bitfocus/companion-module-tools/compare/v0.3.3...v0.4.0) (2022-11-26)
+
+
+### Features
+
+* require node 18 ([f4dfdd2](https://github.com/bitfocus/companion-module-tools/commit/f4dfdd2f510642ca99937100139a65f2903affe9))
+
+
+### Bug Fixes
+
+* add missing dependency ([eacc0f4](https://github.com/bitfocus/companion-module-tools/commit/eacc0f4e9c4af028905d9a096570ce5f34212733))
+
 ## [0.3.3](https://github.com/bitfocus/companion-module-tools/compare/v0.3.2...v0.3.3) (2022-11-22)
 
 
