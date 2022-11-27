@@ -78,6 +78,18 @@ if (fs.existsSync(webpackExtPath)) {
 			}
 		}
 	}
+
+	if (webpackExt.prebuilds) {
+		await fs.mkdir('pkg/prebuilds')
+
+		for (const lib of webpackExt.prebuilds) {
+			const srcDir = await findModuleDir(require.resolve(lib))
+			const dirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
+			for (const dir of dirs) {
+				fs.copy(path.join(srcDir, 'prebuilds', dir), path.join('pkg/prebuilds', dir))
+			}
+		}
+	}
 }
 
 // Write the package.json
