@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/bitfocus/companion-module-tools/compare/v0.4.1...v0.5.0) (2022-11-27)
+
+
+### Features
+
+* support copying native module prebuilt binaries ([3e5610a](https://github.com/bitfocus/companion-module-tools/commit/3e5610a809cbbb8d7ad9844824489ed7f5dedb3a))
+
 ## [0.4.1](https://github.com/bitfocus/companion-module-tools/compare/v0.4.0...v0.4.1) (2022-11-26)
 
 
