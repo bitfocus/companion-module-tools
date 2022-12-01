@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/bitfocus/companion-module-tools/compare/v0.5.0...v0.5.1) (2022-12-01)
+
+
+### Bug Fixes
+
+* update minimum @companion-module/base ([5897c0a](https://github.com/bitfocus/companion-module-tools/commit/5897c0a8e4fde6bb0599fb336437193702143b78))
+
 ## [0.5.0](https://github.com/bitfocus/companion-module-tools/compare/v0.4.1...v0.5.0) (2022-11-27)
 
 
