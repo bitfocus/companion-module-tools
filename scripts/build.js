@@ -1,10 +1,15 @@
-#!/usr/bin/env zx
+#!/usr/bin/env node
+// The zx shebang doesn't resolve dependencies correctly
+import 'zx/globals'
 
 import path from 'path'
 import { fs } from 'zx'
 import { findUp } from 'find-up'
 import * as tar from 'tar'
 import { validateManifest } from '@companion-module/base'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
 
 async function findModuleDir(cwd) {
 	const stat = await fs.stat(cwd)

@@ -1,4 +1,6 @@
-#!/usr/bin/env zx
+#!/usr/bin/env node
+// The zx shebang doesn't resolve dependencies correctly
+import 'zx/globals'
 
 import path from 'path'
 import { fs } from 'zx'

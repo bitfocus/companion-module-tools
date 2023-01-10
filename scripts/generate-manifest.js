@@ -1,4 +1,6 @@
-#!/usr/bin/env zx
+#!/usr/bin/env node
+// The zx shebang doesn't resolve dependencies correctly
+import 'zx/globals'
 
 import { fs, path, $ } from 'zx'
 import parseAuthor from 'parse-author'
