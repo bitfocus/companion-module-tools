@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/bitfocus/companion-module-tools/compare/v0.5.1...v0.5.2) (2023-01-10)
+
+
+### Bug Fixes
+
+* scripts unable to resolve dependencies ([312caf3](https://github.com/bitfocus/companion-module-tools/commit/312caf36f42bb17965fc010e80bd2184c4bf8a62))
+
 ## [0.5.1](https://github.com/bitfocus/companion-module-tools/compare/v0.5.0...v0.5.1) (2022-12-01)
 
 
