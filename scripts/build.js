@@ -40,6 +40,7 @@ await fs.copy('companion', 'pkg/companion')
 const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
 const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
 
+// Copy the manifest, overriding some properties
 const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))
 manifestJson.runtime.entrypoint = '../main.js'
 manifestJson.version = srcPackageJson.version
@@ -69,6 +70,8 @@ const packageJson = {
 const webpackExtPath = path.resolve('build-config.cjs')
 if (fs.existsSync(webpackExtPath)) {
 	const webpackExt = require(webpackExtPath)
+
+	// Add any external dependencies, with versions matching what is currntly installed
 	if (webpackExt.externals) {
 		const extArray = Array.isArray(webpackExt.externals) ? webpackExt.externals : [webpackExt.externals]
 		for (const extGroup of extArray) {
@@ -84,6 +87,7 @@ if (fs.existsSync(webpackExtPath)) {
 		}
 	}
 
+	// Copy across any prebuilds that can be loaded corectly
 	if (webpackExt.prebuilds) {
 		await fs.mkdir('pkg/prebuilds')
 
@@ -95,22 +99,31 @@ if (fs.existsSync(webpackExtPath)) {
 			}
 		}
 	}
+
+	// copy extra files
+	if (Array.isArray(webpackExt.extraFiles)) {
+		const files = await globby(webpackExt.extraFiles)
+		for (const file of files) {
+			await fs.copy(file, path.join('pkg', file), {
+				recursive: true,
+				overwrite: false,
+			})
+		}
+	}
 }
 
 // Write the package.json
 // packageJson.bundleDependencies = Object.keys(packageJson.dependencies)
 await fs.writeFile('pkg/package.json', JSON.stringify(packageJson))
 
+// If we found any depenendencies for the pkg, install them
 if (Object.keys(packageJson.dependencies).length) {
-	await $`yarn --cwd pkg`
+	await $`yarn --cwd pkg install`
 }
 
 // Create tgz of the build
-// await $`yarn --cwd pkg pack --filename pkg/package.tgz`
-
 await tar
-	.c(
-		// or tar.create
+	.create(
 		{
 			gzip: true,
 		},
