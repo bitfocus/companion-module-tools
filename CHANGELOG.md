@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0](https://github.com/bitfocus/companion-module-tools/compare/v0.5.2...v1.0.0) (2023-02-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename webpack-ext.cjs to build-config.cjs
+
+### Features
+
+* rename webpack-ext.cjs to build-config.cjs ([c8864cd](https://github.com/bitfocus/companion-module-tools/commit/c8864cd55306a4ae60c6602cf7c73bf81eb585be))
+* support including 'extraFiles' in the built pkg ([b130f57](https://github.com/bitfocus/companion-module-tools/commit/b130f572a13ddef49596ba0a4103d18d22b8a231))
+
 ## [0.5.2](https://github.com/bitfocus/companion-module-tools/compare/v0.5.1...v0.5.2) (2023-01-10)
 
 
