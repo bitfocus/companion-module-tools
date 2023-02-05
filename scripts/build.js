@@ -66,7 +66,7 @@ const packageJson = {
 }
 
 // Ensure that any externals are added as dependencies
-const webpackExtPath = path.resolve('webpack-ext.cjs')
+const webpackExtPath = path.resolve('build-config.cjs')
 if (fs.existsSync(webpackExtPath)) {
 	const webpackExt = require(webpackExtPath)
 	if (webpackExt.externals) {

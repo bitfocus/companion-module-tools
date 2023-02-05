@@ -7,7 +7,7 @@ if (!pkgJson.main) throw new Error(`Missing main in package.json`)
 
 let webpackExt = {}
 try {
-	webpackExt = require(path.join(process.cwd(), 'webpack-ext.cjs'))
+	webpackExt = require(path.join(process.cwd(), 'build-config.cjs'))
 
 	console.log('Found additional webpack configuration')
 } catch (e) {
