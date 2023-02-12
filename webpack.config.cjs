@@ -1,3 +1,4 @@
+const { NormalModuleReplacementPlugin } = require('webpack')
 const path = require('path')
 
 const frameworkDir = path.relative(process.cwd(), path.resolve('@companion-module/base'))
@@ -39,6 +40,12 @@ module.exports = {
 	experiments: {
 		topLevelAwait: true,
 	},
+	plugins: [
+		new NormalModuleReplacementPlugin(
+			/sharp\/lib\/sharp.js$/,
+			path.resolve(path.join(__dirname, 'hacks/sharp-loader.js'))
+		),
+	],
 	module: {
 		rules: [
 			// {
