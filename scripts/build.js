@@ -129,8 +129,6 @@ if (Object.keys(packageJson.dependencies).length) {
 }
 
 // Create tgz of the build
-// await $`yarn --cwd pkg pack --filename pkg/package.tgz`
-
 await tar
 	.create(
 		{
