@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/bitfocus/companion-module-tools/compare/v1.0.0...v1.0.1) (2023-02-17)
+
+
+### Bug Fixes
+
+* missing prebuilds in built packages ([acd76e8](https://github.com/bitfocus/companion-module-tools/commit/acd76e84ed98916f31d251ddddc0a601514c91c0))
+
 ## [1.0.0](https://github.com/bitfocus/companion-module-tools/compare/v0.5.2...v1.0.0) (2023-02-05)
 
 
