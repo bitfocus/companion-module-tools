@@ -31,7 +31,7 @@ console.log(`Framework path: ${frameworkDir}`)
 await fs.remove('pkg')
 
 // build the code
-const webpackConfig = path.join(toolsDir, 'webpack.config.cjs')
+const webpackConfig = path.join(toolsDir, 'webpack.config.cjs').replace(/\\/g, '/') // Fix slashes because windows is a pain
 await $`yarn webpack -c ${webpackConfig}`
 
 // copy in the metadata
