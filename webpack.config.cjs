@@ -54,5 +54,6 @@ module.exports = async (env) => {
 				// },
 			],
 		},
+		plugins: [...(webpackExt.plugins || [])],
 	}
 }
