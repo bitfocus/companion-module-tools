@@ -54,6 +54,9 @@ module.exports = async (env) => {
 				// },
 			],
 		},
-		plugins: [...(webpackExt.plugins || [])],
+		plugins: [
+			// Let modules define additional plugins. Hopefully this won't conflict with anything we add
+			...(webpackExt.plugins || []),
+		],
 	}
 }
