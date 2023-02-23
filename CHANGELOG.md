@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/bitfocus/companion-module-tools/compare/v1.0.2...v1.1.0) (2023-02-22)
+
+
+### Features
+
+* add `--dev` parameter to produce a `development` webpack build ([ffb36bc](https://github.com/bitfocus/companion-module-tools/commit/ffb36bcd9cb5109eed0bbb05da22b4ea00745b34))
+* allow modules to specify additional webpack plugins ([3dc1f5f](https://github.com/bitfocus/companion-module-tools/commit/3dc1f5f0da879c31dab0395ac6d012ad810ad4ad))
+
 ## [1.0.2](https://github.com/bitfocus/companion-module-tools/compare/v1.0.1...v1.0.2) (2023-02-19)
 
 
