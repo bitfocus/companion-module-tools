@@ -107,8 +107,7 @@ if (fs.existsSync(webpackExtPath)) {
 	if (Array.isArray(webpackExt.extraFiles)) {
 		const files = await globby(webpackExt.extraFiles)
 		for (const file of files) {
-			await fs.copy(file, path.join('pkg', file), {
-				recursive: true,
+			await fs.copy(file, path.join('pkg', path.basename(file)), {
 				overwrite: false,
 			})
 		}
