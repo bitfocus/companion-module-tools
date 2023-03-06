@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/bitfocus/companion-module-tools/compare/v1.1.0...v1.2.0) (2023-03-06)
+
+
+### Features
+
+* flatten directory structure for extra files ([edfff7d](https://github.com/bitfocus/companion-module-tools/commit/edfff7dc2d41d8215cde2b9d9158a08cbecb62e3))
+
 ## [1.1.0](https://github.com/bitfocus/companion-module-tools/compare/v1.0.2...v1.1.0) (2023-02-22)
 
 
