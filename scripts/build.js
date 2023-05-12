@@ -84,7 +84,7 @@ if (fs.existsSync(webpackExtPath)) {
 				for (const external of Object.keys(extGroup)) {
 					const extPath = await findUp('package.json', { cwd: require.resolve(external) })
 					const extJson = JSON.parse(await fs.readFile(extPath))
-					packageJson.dependencies[external] = extJson.version
+					packageJson.dependencies[extJson.name] = extJson.version
 				}
 			}
 		}
