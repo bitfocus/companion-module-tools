@@ -30,12 +30,17 @@ console.log(`Framework path: ${frameworkDir}`)
 // clean old
 await fs.remove('pkg')
 
-const webpackArgs = []
-if (argv.dev) webpackArgs.push('--env', 'dev')
+const webpackArgs = {}
+if (argv.dev || argv.debug) webpackArgs['env']= 'dev'
+
+const webpackArgsArray = []
+for (const [k, v] of Object.entries(webpackArgs)) {
+	webpackArgsArray.push(`--${k}`, v)
+}
 
 // build the code
 const webpackConfig = path.join(toolsDir, 'webpack.config.cjs').replace(/\\/g, '/') // Fix slashes because windows is a pain
-await $`yarn webpack -c ${webpackConfig} ${webpackArgs}`
+await $`yarn webpack -c ${webpackConfig} ${webpackArgsArray}`
 
 // copy in the metadata
 await fs.copy('companion', 'pkg/companion')
@@ -84,7 +89,7 @@ if (fs.existsSync(webpackExtPath)) {
 				for (const external of Object.keys(extGroup)) {
 					const extPath = await findUp('package.json', { cwd: require.resolve(external) })
 					const extJson = JSON.parse(await fs.readFile(extPath))
-					packageJson.dependencies[extJson.name] = extJson.version
+					packageJson.dependencies[external] = extJson.version
 				}
 			}
 		}
@@ -113,6 +118,37 @@ if (fs.existsSync(webpackExtPath)) {
 		}
 	}
 }
+
+// Copy node-gyp-build debugs
+const webpackConfigJson = await require(webpackConfig)(webpackArgs)
+if (webpackConfigJson.node?.__dirname === true) {
+	const copyNodeGypBuildPrebuilds = (thisPath) => {
+		const nodeModPath = path.join(thisPath, 'node_modules')
+		if (fs.existsSync(nodeModPath)) {
+			for (const dir of fs.readdirSync(nodeModPath)) {
+				const modDir = path.join(nodeModPath, dir)
+				copyNodeGypBuildPrebuilds(modDir)
+			}
+		}
+
+		const pkgJsonPath = path.join(thisPath, 'package.json')
+		if (thisPath && fs.existsSync(pkgJsonPath)) {
+			const dirPkgJsonStr = fs.readFileSync(pkgJsonPath)
+			const dirPkgJson = JSON.parse(dirPkgJsonStr.toString())
+
+			const prebuildsDir = path.join(thisPath, 'prebuilds')
+			if (dirPkgJson.dependencies?.['node-gyp-build'] && fs.existsSync(prebuildsDir)) {
+				fs.mkdirpSync(path.join('pkg', thisPath))
+				fs.copySync(prebuildsDir, path.join('pkg', prebuildsDir))
+				
+				console.log('copying node-gyp-build prebuilds from', thisPath)
+			}
+		}
+	}
+	
+	copyNodeGypBuildPrebuilds('')
+}
+
 
 // Write the package.json
 // packageJson.bundleDependencies = Object.keys(packageJson.dependencies)

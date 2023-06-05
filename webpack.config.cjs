@@ -58,5 +58,8 @@ module.exports = async (env) => {
 			// Let modules define additional plugins. Hopefully this won't conflict with anything we add
 			...(webpackExt.plugins || []),
 		],
+		node: webpackExt.useOriginalStructureDirname ? {
+			__dirname: true
+		} : undefined,
 	}
 }
