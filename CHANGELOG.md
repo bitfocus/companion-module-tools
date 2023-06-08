@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.0.1](https://github.com/bitfocus/companion-module-tools/compare/v1.3.0...v0.0.1) (2023-06-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename webpack-ext.cjs to build-config.cjs
+
+### Features
+
+* add `--dev` parameter to produce a `development` webpack build ([ffb36bc](https://github.com/bitfocus/companion-module-tools/commit/ffb36bcd9cb5109eed0bbb05da22b4ea00745b34))
+* add option to build with support for node-gyp-build ([#24](https://github.com/bitfocus/companion-module-tools/issues/24)) ([2a4e311](https://github.com/bitfocus/companion-module-tools/commit/2a4e3115ca26c695d409080d07ef8ad5e6dd840a))
+* add runtime.apiVersion to manifest ([b42703b](https://github.com/bitfocus/companion-module-tools/commit/b42703b5bac6e2cb6addc8e71239c24e26c43b90))
+* allow modules to specify additional webpack plugins ([3dc1f5f](https://github.com/bitfocus/companion-module-tools/commit/3dc1f5f0da879c31dab0395ac6d012ad810ad4ad))
+* flatten directory structure for extra files ([edfff7d](https://github.com/bitfocus/companion-module-tools/commit/edfff7dc2d41d8215cde2b9d9158a08cbecb62e3))
+* initial commit ([c07d9af](https://github.com/bitfocus/companion-module-tools/commit/c07d9af14b2f950ac93095ed1b6e37d0a206ef99))
+* remove husky & lint-staged ([7b71d84](https://github.com/bitfocus/companion-module-tools/commit/7b71d84cb8850242846d5118f651fd7ae129615c))
+* rename webpack-ext.cjs to build-config.cjs ([c8864cd](https://github.com/bitfocus/companion-module-tools/commit/c8864cd55306a4ae60c6602cf7c73bf81eb585be))
+* require node 18 ([f4dfdd2](https://github.com/bitfocus/companion-module-tools/commit/f4dfdd2f510642ca99937100139a65f2903affe9))
+* rework eslint config to be generated to allow further customisation ([e30ae2b](https://github.com/bitfocus/companion-module-tools/commit/e30ae2b23714e858eb333c9be9396d03f187dbee))
+* support copying native module prebuilt binaries ([3e5610a](https://github.com/bitfocus/companion-module-tools/commit/3e5610a809cbbb8d7ad9844824489ed7f5dedb3a))
+* support including 'extraFiles' in the built pkg ([b130f57](https://github.com/bitfocus/companion-module-tools/commit/b130f572a13ddef49596ba0a4103d18d22b8a231))
+* update @companion-module/base ([97742a5](https://github.com/bitfocus/companion-module-tools/commit/97742a58a71e09a93988f0288e661bd5171f14ba))
+* validateManifest before building module ([0166c7d](https://github.com/bitfocus/companion-module-tools/commit/0166c7da0ed725de77e3c71bc7992f8fd9deba94))
+
+
+### Bug Fixes
+
+* add missing dependency ([eacc0f4](https://github.com/bitfocus/companion-module-tools/commit/eacc0f4e9c4af028905d9a096570ce5f34212733))
+* don't rename modules ([0d35f51](https://github.com/bitfocus/companion-module-tools/commit/0d35f510cf24333b753d8b34a5c4af27623fcaed))
+* errors ([26af195](https://github.com/bitfocus/companion-module-tools/commit/26af195288010c759dd354fc3d9e9d1946a1a16d))
+* generating of manifest incorrectly processing 'products' field ([5f5ad9e](https://github.com/bitfocus/companion-module-tools/commit/5f5ad9e802249e4c9fe60ad8eb2278c715fa0a15))
+* missing prebuilds in built packages ([acd76e8](https://github.com/bitfocus/companion-module-tools/commit/acd76e84ed98916f31d251ddddc0a601514c91c0))
+* missing webpack config ([a039dee](https://github.com/bitfocus/companion-module-tools/commit/a039deeb7c1736ce87f3bba8759c230de7ad883d))
+* paths on windows in bash ([85f5438](https://github.com/bitfocus/companion-module-tools/commit/85f5438a57caf0328beb26b18ef55fcab2115665))
+* preserve json files ([6d464b5](https://github.com/bitfocus/companion-module-tools/commit/6d464b5dc30f961e053de71d64ec07e005c542a5))
+* scripts unable to resolve dependencies ([312caf3](https://github.com/bitfocus/companion-module-tools/commit/312caf36f42bb17965fc010e80bd2184c4bf8a62))
+* set `importHelpers: false` for recommended tsconfig ([1b04d89](https://github.com/bitfocus/companion-module-tools/commit/1b04d89bc50922466dffb416b4ed3b4acf63be71))
+* set version field in manifest when generating pkg.tgz ([b42703b](https://github.com/bitfocus/companion-module-tools/commit/b42703b5bac6e2cb6addc8e71239c24e26c43b90))
+* tsconfig recommends commonjs ([1851276](https://github.com/bitfocus/companion-module-tools/commit/1851276f725254ba1338a9d30d8cd32e7dea31b9))
+* update @companion-module/base ([33df2a6](https://github.com/bitfocus/companion-module-tools/commit/33df2a61796954c30c01e25a5f08a2a1bd874e64))
+* update minimum @companion-module/base ([5897c0a](https://github.com/bitfocus/companion-module-tools/commit/5897c0a8e4fde6bb0599fb336437193702143b78))
+* update readme ([def7f19](https://github.com/bitfocus/companion-module-tools/commit/def7f19ff41412d1b85e13beee277b48247a2c6c))
+* update runtime.api in conversion script ([ce95e96](https://github.com/bitfocus/companion-module-tools/commit/ce95e96626023e11ec7fe460278a3418dc6f0eaf))
+* updated tsconfig ([6dd1a05](https://github.com/bitfocus/companion-module-tools/commit/6dd1a0544e5d9f784f276485cb9254b35195f3c1))
+* use name from package.json when building externals dependencies object ([6563d0e](https://github.com/bitfocus/companion-module-tools/commit/6563d0e1b23123a056146576e7721c3e2f9e4cfd))
+
+
+### Miscellaneous Chores
+
+* update readme ([8a240c5](https://github.com/bitfocus/companion-module-tools/commit/8a240c5bd6ebc14d9f978fd0e14dba41986626da))
+
 ## [1.3.0](https://github.com/bitfocus/companion-module-tools/compare/v1.2.1...v1.3.0) (2023-06-08)
 
 
