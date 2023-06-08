@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/bitfocus/companion-module-tools/compare/v1.2.1...v1.3.0) (2023-06-08)
+
+
+### Features
+
+* add option to build with support for node-gyp-build ([#24](https://github.com/bitfocus/companion-module-tools/issues/24)) ([2a4e311](https://github.com/bitfocus/companion-module-tools/commit/2a4e3115ca26c695d409080d07ef8ad5e6dd840a))
+* rework eslint config to be generated to allow further customisation ([e30ae2b](https://github.com/bitfocus/companion-module-tools/commit/e30ae2b23714e858eb333c9be9396d03f187dbee))
+
 ## [1.2.1](https://github.com/bitfocus/companion-module-tools/compare/v1.2.0...v1.2.1) (2023-05-12)
 
 
