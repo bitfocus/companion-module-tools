@@ -119,7 +119,7 @@ if (fs.existsSync(webpackExtPath)) {
 	}
 }
 
-// Copy node-gyp-build debugs
+// Copy node-gyp-build prebulds
 const webpackConfigJson = await require(webpackConfig)(webpackArgs)
 if (webpackConfigJson.node?.__dirname === true) {
 	const copyNodeGypBuildPrebuilds = (thisPath) => {
