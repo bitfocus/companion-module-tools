@@ -28,7 +28,7 @@ module.exports = function generateEslintConfig(options = {}) {
 		overrides: [
 			// Note: the overrides replace the values defined above, so make sure to extend them if they are needed
 			{
-				files: ['*.js'],
+				files: ['*.js', '*.cjs', '*.mjs'],
 				settings: {
 					node: {
 						tryExtensions: ['.js', '.json', '.node', '.ts'],
