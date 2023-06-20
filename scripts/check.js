@@ -6,6 +6,9 @@ import path from 'path'
 import { fs } from 'zx'
 import { findUp } from 'find-up'
 import { validateManifest } from '@companion-module/base'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
 
 async function findModuleDir(cwd) {
 	const stat = await fs.stat(cwd)
