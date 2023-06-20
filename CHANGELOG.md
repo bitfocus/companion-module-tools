@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/bitfocus/companion-module-tools/compare/v1.3.1...v1.3.2) (2023-06-20)
+
+
+### Bug Fixes
+
+* `companion-module-check` script ([45fa276](https://github.com/bitfocus/companion-module-tools/commit/45fa2766fdaab7991c7554c40b09792d3eb8bda2))
+
 ## [1.3.1](https://github.com/bitfocus/companion-module-tools/compare/v1.3.0...v1.3.1) (2023-06-08)
 
 
