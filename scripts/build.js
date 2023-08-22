@@ -31,7 +31,7 @@ console.log(`Framework path: ${frameworkDir}`)
 await fs.remove('pkg')
 
 const webpackArgs = {}
-if (argv.dev || argv.debug) webpackArgs['env']= 'dev'
+if (argv.dev || argv.debug) webpackArgs['env'] = 'dev'
 
 const webpackArgsArray = []
 for (const [k, v] of Object.entries(webpackArgs)) {
@@ -140,15 +140,14 @@ if (webpackConfigJson.node?.__dirname === true) {
 			if (dirPkgJson.dependencies?.['node-gyp-build'] && fs.existsSync(prebuildsDir)) {
 				fs.mkdirpSync(path.join('pkg', thisPath))
 				fs.copySync(prebuildsDir, path.join('pkg', prebuildsDir))
-				
+
 				console.log('copying node-gyp-build prebuilds from', thisPath)
 			}
 		}
 	}
-	
+
 	copyNodeGypBuildPrebuilds('')
 }
-
 
 // Write the package.json
 // packageJson.bundleDependencies = Object.keys(packageJson.dependencies)

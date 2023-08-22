@@ -39,6 +39,9 @@ module.exports = async (env) => {
 		experiments: {
 			topLevelAwait: true,
 		},
+		optimization: {
+			minimize: !webpackExt.disableMinifier,
+		},
 		module: {
 			rules: [
 				// {
@@ -58,8 +61,10 @@ module.exports = async (env) => {
 			// Let modules define additional plugins. Hopefully this won't conflict with anything we add
 			...(webpackExt.plugins || []),
 		],
-		node: webpackExt.useOriginalStructureDirname ? {
-			__dirname: true
-		} : undefined,
+		node: webpackExt.useOriginalStructureDirname
+			? {
+					__dirname: true,
+			  }
+			: undefined,
 	}
 }
