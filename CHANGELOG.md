@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/bitfocus/companion-module-tools/compare/v1.3.2...v1.4.0) (2023-08-22)
+
+
+### Features
+
+* add option to disable minification. ([9f626f6](https://github.com/bitfocus/companion-module-tools/commit/9f626f69b82b9dc10b195ed076e01f794246f85b))
+
 ## [1.3.2](https://github.com/bitfocus/companion-module-tools/compare/v1.3.1...v1.3.2) (2023-06-20)
 
 
