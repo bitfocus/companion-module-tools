@@ -1,24 +1,26 @@
 const path = require('path')
 
-const frameworkDir = path.relative(process.cwd(), path.resolve('@companion-module/base'))
-const pkgJson = require(path.join(process.cwd(), 'package.json'))
-
-if (!pkgJson.main) throw new Error(`Missing main in package.json`)
-
-let webpackExt = {}
-try {
-	webpackExt = require(path.join(process.cwd(), 'build-config.cjs'))
-
-	console.log('Found additional webpack configuration')
-} catch (e) {
-	// Ignore
-}
-
-let externalsExt = []
-if (Array.isArray(webpackExt.externals)) externalsExt = webpackExt.externals
-else if (webpackExt.externals) externalsExt = [webpackExt.externals]
-
 module.exports = async (env) => {
+	if (!env.ROOT) throw new Error(`Missing ROOT`)
+
+	const frameworkDir = path.relative(env.ROOT, path.resolve('@companion-module/base'))
+	const pkgJson = require(path.join(env.ROOT, 'package.json'))
+
+	if (!pkgJson.main) throw new Error(`Missing main in package.json`)
+
+	let webpackExt = {}
+	try {
+		webpackExt = require(path.join(env.ROOT, 'build-config.cjs'))
+
+		console.log('Found additional webpack configuration')
+	} catch (e) {
+		// Ignore
+	}
+
+	let externalsExt = []
+	if (Array.isArray(webpackExt.externals)) externalsExt = webpackExt.externals
+	else if (webpackExt.externals) externalsExt = [webpackExt.externals]
+
 	return {
 		entry: {
 			main: './' + pkgJson.main, // path.join(frameworkDir, 'dist/entrypoint.js'),
@@ -28,9 +30,9 @@ module.exports = async (env) => {
 		mode: env.dev ? 'development' : 'production',
 		// devtool: env.dev ? undefined : 'source-map', // TODO - this would be nice, but I think the files have to be uploaded directly to sentry which is problematic...
 		output: {
-			path: path.resolve(process.cwd(), 'pkg'),
+			path: path.resolve(env.ROOT, 'pkg'),
 		},
-		context: path.resolve(process.cwd(), '.'),
+		context: path.resolve(env.ROOT, '.'),
 		target: 'node',
 		externals: [
 			// Allow for custom externals
@@ -39,7 +41,7 @@ module.exports = async (env) => {
 		experiments: {
 			topLevelAwait: true,
 		},
-		optimization: {
+optimization: {
 			minimize: !webpackExt.disableMinifier,
 		},
 		module: {
