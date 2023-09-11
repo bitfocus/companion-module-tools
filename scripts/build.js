@@ -20,6 +20,7 @@ async function findModuleDir(cwd) {
 }
 
 // const toolsDir = path.join(__dirname, '..')
+const moduleDir = process.cwd()
 const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
 const frameworkDir = await findModuleDir(require.resolve('@companion-module/base'))
 console.log(`Building for: ${process.cwd()}`)
@@ -30,17 +31,21 @@ console.log(`Framework path: ${frameworkDir}`)
 // clean old
 await fs.remove('pkg')
 
-const webpackArgs = {}
-if (argv.dev || argv.debug) webpackArgs['env'] = 'dev'
+const webpackArgs = {
+	ROOT: moduleDir,
+}
+if (argv.dev || argv.debug) webpackArgs['dev'] = true
 
 const webpackArgsArray = []
 for (const [k, v] of Object.entries(webpackArgs)) {
-	webpackArgsArray.push(`--${k}`, v)
+	webpackArgsArray.push(`--env`, v === true ? k : `${k}=${v}`)
 }
 
 // build the code
+$.cwd = toolsDir
 const webpackConfig = path.join(toolsDir, 'webpack.config.cjs').replace(/\\/g, '/') // Fix slashes because windows is a pain
-await $`yarn webpack -c ${webpackConfig} ${webpackArgsArray}`
+await $`yarn run -B webpack -c ${webpackConfig} ${webpackArgsArray}`
+$.cwd = undefined
 
 // copy in the metadata
 await fs.copy('companion', 'pkg/companion')
