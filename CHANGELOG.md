@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/bitfocus/companion-module-tools/compare/v1.4.0...v1.4.1) (2023-09-11)
+
+
+### Bug Fixes
+
+* support for yarn3 ([6ab2458](https://github.com/bitfocus/companion-module-tools/commit/6ab2458c6148da0b1a305e377408b4cb64399dce))
+
 ## [1.4.0](https://github.com/bitfocus/companion-module-tools/compare/v1.3.2...v1.4.0) (2023-08-22)
 
 
