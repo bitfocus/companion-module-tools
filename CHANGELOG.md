@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/bitfocus/companion-module-tools/compare/v1.4.1...v1.4.2) (2023-12-27)
+
+
+### Bug Fixes
+
+* use name from package.json when building externals dependencies object ([339d2ac](https://github.com/bitfocus/companion-module-tools/commit/339d2acd6cd5d8a770766214d0687a7c9fd05196))
+
 ## [1.4.1](https://github.com/bitfocus/companion-module-tools/compare/v1.4.0...v1.4.1) (2023-09-11)
 
 
