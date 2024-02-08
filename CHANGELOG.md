@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/bitfocus/companion-module-tools/compare/v1.4.4...v1.5.0) (2024-02-08)
+
+
+### Features
+
+* add option to force node-gyp to not be included in the build package ([838bb52](https://github.com/bitfocus/companion-module-tools/commit/838bb52c7c885adec12d8cf240a2b0e6955c6280))
+
 ## [1.4.4](https://github.com/bitfocus/companion-module-tools/compare/v1.4.3...v1.4.4) (2024-02-08)
 
 
