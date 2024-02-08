@@ -160,6 +160,7 @@ await fs.writeFile('pkg/package.json', JSON.stringify(packageJson))
 
 // If we found any depenendencies for the pkg, install them
 if (Object.keys(packageJson.dependencies).length) {
+	await fs.writeFile('pkg/yarn.lock', '')
 	await $`yarn --cwd pkg install`
 }
 
