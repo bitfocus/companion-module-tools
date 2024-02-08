@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/bitfocus/companion-module-tools/compare/v1.4.3...v1.4.4) (2024-02-08)
+
+
+### Bug Fixes
+
+* yarn install failing due to `CI=1` ([076bc54](https://github.com/bitfocus/companion-module-tools/commit/076bc54a2031dfce414941007f60d6d100a129ec))
+
 ## [1.4.3](https://github.com/bitfocus/companion-module-tools/compare/v1.4.2...v1.4.3) (2024-02-08)
 
 
