@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/bitfocus/companion-module-tools/compare/v1.4.2...v1.4.3) (2024-02-08)
+
+
+### Bug Fixes
+
+* touch lockfile before running `yarn install` in package. ([c502dd7](https://github.com/bitfocus/companion-module-tools/commit/c502dd7a4bc2e2156ebd6a339554fbfbb1ded83c))
+
 ## [1.4.2](https://github.com/bitfocus/companion-module-tools/compare/v1.4.1...v1.4.2) (2023-12-27)
 
 
