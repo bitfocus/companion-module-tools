@@ -100,6 +100,12 @@ if (fs.existsSync(webpackExtPath)) {
 		}
 	}
 
+	if (webpackExt.forceRemoveNodeGypFromPkg) {
+		packageJson.resolutions = {
+			'node-gyp': 'npm:empty-npm-package@1.0.0',
+		}
+	}
+
 	// Copy across any prebuilds that can be loaded corectly
 	if (webpackExt.prebuilds) {
 		await fs.mkdir('pkg/prebuilds')
