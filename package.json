@@ -23,15 +23,8 @@
 		"webpack.*"
 	],
 	"dependencies": {
-		"@typescript-eslint/eslint-plugin": "^5.59.9",
-		"@typescript-eslint/parser": "^5.59.9",
-		"eslint": "^8.56.0",
-		"eslint-config-prettier": "^8.8.0",
-		"eslint-plugin-n": "^16.6.2",
-		"eslint-plugin-prettier": "^4.2.1",
 		"find-up": "^7.0.0",
 		"parse-author": "^2.0.0",
-		"prettier": "^2.8.8",
 		"tar": "^6.2.1",
 		"webpack": "^5.90.0",
 		"webpack-cli": "^5.1.4",
