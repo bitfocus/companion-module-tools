@@ -38,14 +38,10 @@
 	"peerDependencies": {
 		"@companion-module/base": "^1.7.1",
 		"eslint": "^9.0.0",
-		"eslint-plugin-jest": "*",
 		"prettier": "^3.0.0"
 	},
 	"peerDependenciesMeta": {
 		"eslint": {
-			"optional": true
-		},
-		"eslint-plugin-jest": {
 			"optional": true
 		},
 		"prettier": {
@@ -54,7 +50,6 @@
 	},
 	"devDependencies": {
 		"@types/eslint": "^8.56.10",
-		"eslint": "^9.1.1",
-		"eslint-plugin-jest": "^28.3.0"
+		"eslint": "^9.1.1"
 	}
 }

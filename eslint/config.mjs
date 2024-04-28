@@ -26,14 +26,12 @@ function compactObj(obj) {
  * @returns {Promise<import('eslint').Linter.FlatConfig[]>}
  */
 export async function generateEslintConfig(options = {}) {
-	const jestPlugin = options.enableJest ? await import('eslint-plugin-jest') : null
 	const tseslint = options.typescriptRoot ? await import('typescript-eslint') : null
 
 	/** @type {import('eslint').Linter.FlatConfig} */
 	const result = {
 		// extends: commonExtends,
 		plugins: compactObj({
-			jest: jestPlugin,
 			'@typescript-eslint': tseslint ? tseslint.plugin : null,
 		}),
 		rules: {
@@ -95,13 +93,6 @@ export async function generateEslintConfig(options = {}) {
 						'@typescript-eslint/no-redundant-type-constituents': 0,
 						/** End 'recommended-requiring-type-checking' overrides */
 					},
-			  }
-			: null,
-		jestPlugin
-			? {
-					// enable jest rules on test files
-					files: ['**/__tests__/**/*', 'test/**/*'],
-					...jestPlugin.configs['flat/recommended'],
 			  }
 			: null,
 		tseslint
