@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/bitfocus/companion-module-tools/compare/v1.5.0...v1.5.1) (2024-06-20)
+
+
+### Bug Fixes
+
+* don't expand `extraFiles` directories when copying ([6ad1d43](https://github.com/bitfocus/companion-module-tools/commit/6ad1d43f6a83fa44ea2014fbe357f0ab1687ea0f))
+
 ## [1.5.0](https://github.com/bitfocus/companion-module-tools/compare/v1.4.4...v1.5.0) (2024-02-08)
 
 
