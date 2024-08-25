@@ -23,12 +23,12 @@ function compactObj(obj) {
 
 /***
  * @param {{ enableJest?: boolean, typescriptRoot?: string, ignores?: string[] }} [options={}] - Options to customize the config
- * @returns {Promise<import('eslint').Linter.FlatConfig[]>}
+ * @returns {Promise<import('eslint').Linter.Config[]>}
  */
 export async function generateEslintConfig(options = {}) {
 	const tseslint = options.typescriptRoot ? await import('typescript-eslint') : null
 
-	/** @type {import('eslint').Linter.FlatConfig} */
+	/** @type {import('eslint').Linter.Config} */
 	const result = {
 		// extends: commonExtends,
 		plugins: compactObj({
@@ -68,7 +68,7 @@ export async function generateEslintConfig(options = {}) {
 		{
 			// disable type-aware linting on JS files
 			files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
-			...tseslint.configs.disableTypeChecked,
+			...(tseslint ? tseslint.configs.disableTypeChecked : {}),
 		},
 		tseslint
 			? {
@@ -126,5 +126,13 @@ export async function generateEslintConfig(options = {}) {
 			// But lastly, ensure that we ignore certain paths
 			ignores: ['**/dist/*', '/dist', '**/pkg/*', '**/docs/*', '**/generated/*', ...(options.ignores || [])],
 		},
+		{
+			files: [
+				'eslint.config.*',
+			],
+			rules: {
+				'n/no-unpublished-import': 'off',
+			}
+		}
 	].filter((v) => !!v)
 }

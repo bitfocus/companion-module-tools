@@ -1,5 +1,8 @@
 const createFragments = require('./fragments.cjs')
 
+/**
+ * @deprecated use the version in config.mjs with eslint 9 instead
+ */
 module.exports = function generateEslintConfig(options = {}) {
 	const { commonPlugins, tsPlugins, commonExtends, tsExtends, commonRules, tsRules, tsParser } = createFragments(
 		options.enableJest
