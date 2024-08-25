@@ -59,7 +59,7 @@ export async function generateEslintConfig(options = {}) {
 							project: true,
 						},
 					},
-			  }
+				}
 			: null,
 
 		neslint.configs['flat/recommended-script'],
@@ -76,7 +76,10 @@ export async function generateEslintConfig(options = {}) {
 					rules: {
 						'@typescript-eslint/no-explicit-any': 'off',
 						'@typescript-eslint/interface-name-prefix': 'off',
-						'@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_(.+)' }],
+						'@typescript-eslint/no-unused-vars': [
+							'error',
+							{ argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', varsIgnorePattern: '^_(.+)' },
+						],
 						'@typescript-eslint/no-floating-promises': 'error',
 						'@typescript-eslint/explicit-module-boundary-types': ['error'],
 						'@typescript-eslint/promise-function-async': 'error',
@@ -93,7 +96,7 @@ export async function generateEslintConfig(options = {}) {
 						'@typescript-eslint/no-redundant-type-constituents': 0,
 						/** End 'recommended-requiring-type-checking' overrides */
 					},
-			  }
+				}
 			: null,
 		tseslint
 			? {
@@ -102,7 +105,7 @@ export async function generateEslintConfig(options = {}) {
 						'@typescript-eslint/ban-ts-ignore': 'off',
 						'@typescript-eslint/ban-ts-comment': 'off',
 					},
-			  }
+				}
 			: null,
 		{
 			// disable type-aware linting on JS files
@@ -127,12 +130,10 @@ export async function generateEslintConfig(options = {}) {
 			ignores: ['**/dist/*', '/dist', '**/pkg/*', '**/docs/*', '**/generated/*', ...(options.ignores || [])],
 		},
 		{
-			files: [
-				'eslint.config.*',
-			],
+			files: ['eslint.config.*'],
 			rules: {
 				'n/no-unpublished-import': 'off',
-			}
-		}
+			},
+		},
 	].filter((v) => !!v)
 }
