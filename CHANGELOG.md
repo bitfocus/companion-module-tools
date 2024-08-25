@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/bitfocus/companion-module-tools/compare/v1.5.1...v2.0.0) (2024-08-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove eslint and prettier as dependencies, modules should install these directly ([#43](https://github.com/bitfocus/companion-module-tools/issues/43))
+
+### Features
+
+* remove eslint and prettier as dependencies, modules should install these directly ([#43](https://github.com/bitfocus/companion-module-tools/issues/43)) ([45615fc](https://github.com/bitfocus/companion-module-tools/commit/45615fc3d5448d32ea37b9023e9476ca4893c407))
+
 ## [1.5.1](https://github.com/bitfocus/companion-module-tools/compare/v1.5.0...v1.5.1) (2024-06-20)
 
 
