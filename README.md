@@ -41,7 +41,7 @@ If using typescript, you should specify a `typescriprRoot`
 import { generateEslintConfig } from '@companion-module/tools/eslint/config.mjs'
 
 export default generateEslintConfig({
-    typescriptRoot: '.',
+    enableTypescript: true,
 })
 ```
 
@@ -50,7 +50,7 @@ You can easily override rules in this setup with:
 import { generateEslintConfig } from '@companion-module/tools/eslint/config.mjs'
 
 const baseConfig = await generateEslintConfig({
-	typescriptRoot: '.',
+	enableTypescript: true,
 })
 
 const customConfig = [

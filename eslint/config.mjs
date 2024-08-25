@@ -22,11 +22,11 @@ function compactObj(obj) {
 }
 
 /***
- * @param {{ enableJest?: boolean, typescriptRoot?: string, ignores?: string[] }} [options={}] - Options to customize the config
+ * @param {{ enableJest?: boolean, enableTypescript?: boolean, ignores?: string[] }} [options={}] - Options to customize the config
  * @returns {Promise<import('eslint').Linter.Config[]>}
  */
 export async function generateEslintConfig(options = {}) {
-	const tseslint = options.typescriptRoot ? await import('typescript-eslint') : null
+	const tseslint = options.enableTypescript ? await import('typescript-eslint') : null
 
 	/** @type {import('eslint').Linter.Config} */
 	const result = {
