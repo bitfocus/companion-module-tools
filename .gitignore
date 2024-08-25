@@ -16,3 +16,4 @@ docs
 dist
 *.log
 node_modules
+.yarn
