@@ -3,6 +3,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
 name: release-please
 jobs:
   release-please:
@@ -53,7 +58,12 @@ jobs:
       - name: Publish to NPM
         if: ${{ steps.do-publish.outputs.tag }}
         run: |
-          npm publish --access=public --tag ${{ steps.do-publish.outputs.tag }}
+          npm set "//registry.npmjs.org/:_authToken" "$NODE_AUTH_TOKEN"
+
+          npm publish --access=public --tag ${{ steps.do-publish.outputs.tag }} --provenance
+
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "**Published:** $NEW_VERSION" >> $GITHUB_STEP_SUMMARY
         env:
           CI: true
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
