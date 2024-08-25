@@ -4,7 +4,10 @@
 	"type": "module",
 	"main": "index.js",
 	"license": "MIT",
-	"repository": "https://github.com/bitfocus/companion-module-tools",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitfocus/companion-module-tools.git"
+	},
 	"bin": {
 		"companion-generate-manifest": "scripts/generate-manifest.js",
 		"companion-module-build": "scripts/build.js",
