@@ -11,7 +11,7 @@
 		"companion-generate-manifest": "scripts/generate-manifest.js"
 	},
 	"engines": {
-		"node": "^18.12"
+		"node": "^18.18"
 	},
 	"files": [
 		"eslint",
@@ -23,21 +23,38 @@
 		"webpack.*"
 	],
 	"dependencies": {
-		"@typescript-eslint/eslint-plugin": "^5.59.9",
-		"@typescript-eslint/parser": "^5.59.9",
-		"eslint": "^8.56.0",
-		"eslint-config-prettier": "^8.8.0",
-		"eslint-plugin-n": "^16.6.2",
-		"eslint-plugin-prettier": "^4.2.1",
+		"@eslint/js": "^9.9.1",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-n": "^17.10.2",
+		"eslint-plugin-prettier": "^5.2.1",
 		"find-up": "^7.0.0",
 		"parse-author": "^2.0.0",
-		"prettier": "^2.8.8",
 		"tar": "^6.2.1",
 		"webpack": "^5.90.0",
 		"webpack-cli": "^5.1.4",
 		"zx": "^7.2.3"
 	},
 	"peerDependencies": {
-		"@companion-module/base": "^1.4.1"
+		"@companion-module/base": "^1.7.1",
+		"eslint": "^9.0.0",
+		"prettier": "^3.0.0",
+		"typescript-eslint": "^8.2.0"
+	},
+	"peerDependenciesMeta": {
+		"eslint": {
+			"optional": true
+		},
+		"prettier": {
+			"optional": true
+		},
+		"typescript-eslint": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@types/eslint": "^9.6.0",
+		"eslint": "^9.9.1",
+		"prettier": "^3.3.3",
+		"typescript-eslint": "^8.2.0"
 	}
 }
