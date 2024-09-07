@@ -22,7 +22,13 @@ function compactObj(obj) {
 }
 
 /***
- * @param {{ enableJest?: boolean, enableTypescript?: boolean, ignores?: string[] }} [options={}] - Options to customize the config
+ * @param {{
+ *   enableJest?: boolean,
+ *   enableTypescript?: boolean,
+ *   ignores?: string[],
+ *   rules?: Readonly<import('eslint').Linter.RulesRecord>,
+ *   typescriptRules?: Readonly<import('eslint').Linter.RulesRecord>,
+ * }} [options={}] - Options to customize the config
  * @returns {Promise<import('eslint').Linter.Config[]>}
  */
 export async function generateEslintConfig(options = {}) {
@@ -46,6 +52,8 @@ export async function generateEslintConfig(options = {}) {
 			'no-use-before-define': 'off',
 			'no-warning-comments': ['error', { terms: ['nocommit', '@nocommit', '@no-commit'] }],
 			// 'jest/no-mocks-import': 'off',
+
+			...(options.rules || {}),
 		},
 	}
 
@@ -95,6 +103,8 @@ export async function generateEslintConfig(options = {}) {
 						'@typescript-eslint/restrict-plus-operands': 0,
 						'@typescript-eslint/no-redundant-type-constituents': 0,
 						/** End 'recommended-requiring-type-checking' overrides */
+
+						...(options.typescriptRules || {}),
 					},
 				}
 			: null,
