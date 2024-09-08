@@ -44,7 +44,9 @@ for (const [k, v] of Object.entries(webpackArgs)) {
 // build the code
 $.cwd = toolsDir
 const webpackConfig = path.join(toolsDir, 'webpack.config.cjs').replace(/\\/g, '/') // Fix slashes because windows is a pain
-await $`yarn run -B webpack -c ${webpackConfig} ${webpackArgsArray}`
+const webpackPath = path.join(toolsDir, 'node_modules', '.bin', 'webpack').replace(/\\/g, '/') // Fix slashes because windows is a pain
+// Use a manual path to the webpack binary to avoid issues with yarn versions
+await $`${webpackPath} -c ${webpackConfig} ${webpackArgsArray}`
 $.cwd = undefined
 
 // copy in the metadata
