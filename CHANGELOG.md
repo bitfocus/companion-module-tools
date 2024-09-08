@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/bitfocus/companion-module-tools/compare/v2.0.0...v2.0.1) (2024-09-08)
+
+
+### Bug Fixes
+
+* avoid `yarn` calls inside build script ([d8086c0](https://github.com/bitfocus/companion-module-tools/commit/d8086c0dda9907a387a3eb57690077f0af4459da))
+
 ## [2.0.0](https://github.com/bitfocus/companion-module-tools/compare/v1.5.1...v2.0.0) (2024-08-25)
 
 
