@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/bitfocus/companion-module-tools/compare/v2.0.1...v2.0.2) (2024-09-08)
+
+
+### Bug Fixes
+
+* build script bad webpack path for some projects ([a35529b](https://github.com/bitfocus/companion-module-tools/commit/a35529b042ff0a93dc281da2a85ef77ff002b503))
+
 ## [2.0.1](https://github.com/bitfocus/companion-module-tools/compare/v2.0.0...v2.0.1) (2024-09-08)
 
 
