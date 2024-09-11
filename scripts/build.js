@@ -9,6 +9,10 @@ import * as tar from 'tar'
 import { validateManifest } from '@companion-module/base'
 import { createRequire } from 'module'
 
+if (process.platform === 'win32') {
+	usePowerShell() // to enable powershell
+}
+
 const require = createRequire(import.meta.url)
 
 async function findModuleDir(cwd) {
@@ -44,11 +48,8 @@ for (const [k, v] of Object.entries(webpackArgs)) {
 // build the code
 $.cwd = toolsDir
 const webpackConfig = path.join(toolsDir, 'webpack.config.cjs').replace(/\\/g, '/') // Fix slashes because windows is a pain
-let webpackPath = path.join(toolsDir, 'node_modules', '.bin', 'webpack').replace(/\\/g, '/') // Fix slashes because windows is a pain
-// Try the level above too
-if (!fs.existsSync(webpackPath)) webpackPath = path.join(toolsDir, '../../.bin/webpack').replace(/\\/g, '/') // Fix slashes because windows is a pain
-// Use a manual path to the webpack binary to avoid issues with yarn versions
-await $`${webpackPath} -c ${webpackConfig} ${webpackArgsArray}`
+// use npx to invoke. manual paths does not work on windows, and using `yarn` requires corepack
+await $`npx webpack -c ${webpackConfig} ${webpackArgsArray}`
 $.cwd = undefined
 
 // copy in the metadata
@@ -184,6 +185,6 @@ await tar
 		{
 			gzip: true,
 		},
-		['pkg']
+		['pkg'],
 	)
 	.pipe(fs.createWriteStream('pkg.tgz'))

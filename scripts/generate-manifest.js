@@ -5,6 +5,10 @@ import 'zx/globals'
 import { fs, path, $ } from 'zx'
 import parseAuthor from 'parse-author'
 
+if (process.platform === 'win32') {
+	usePowerShell() // to enable powershell
+}
+
 if (await fs.pathExists('companion/manifest.json')) {
 	throw new Error('Manifest has already been created')
 }
