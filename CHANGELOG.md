@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/bitfocus/companion-module-tools/compare/v2.0.2...v2.0.3) (2024-09-11)
+
+
+### Bug Fixes
+
+* update `zx` and another try at `webpack` invocation on windows ([8973b61](https://github.com/bitfocus/companion-module-tools/commit/8973b613f4ae1fd07eaae88a8c9b3e963fd7f62b))
+
 ## [2.0.2](https://github.com/bitfocus/companion-module-tools/compare/v2.0.1...v2.0.2) (2024-09-08)
 
 
