@@ -70,6 +70,12 @@ export async function generateEslintConfig(options = {}) {
 			files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
 			...(tseslint ? tseslint.configs.disableTypeChecked : {}),
 		},
+		{
+			files: ['*.mjs'],
+			languageOptions: {
+				sourceType: 'module',
+			},
+		},
 		tseslint
 			? {
 					files: ['**/*.ts', '**/*.cts', '**/*.mts'],
