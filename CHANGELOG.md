@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4](https://github.com/bitfocus/companion-module-tools/compare/v2.0.3...v2.0.4) (2024-09-16)
+
+
+### Bug Fixes
+
+* ensure mjs files are interpreted as esm ([bf0fceb](https://github.com/bitfocus/companion-module-tools/commit/bf0fceb569bd1e193ebe23f95fb27110fb0d3391))
+
 ## [2.0.3](https://github.com/bitfocus/companion-module-tools/compare/v2.0.2...v2.0.3) (2024-09-11)
 
 
