@@ -24,7 +24,7 @@ __metadata:
     webpack-cli: "npm:^5.1.4"
     zx: "npm:^8.1.6"
   peerDependencies:
-    "@companion-module/base": ^1.7.1
+    "@companion-module/base": ^1.11.0
     eslint: ^9.0.0
     prettier: ^3.0.0
     typescript-eslint: ^8.2.0

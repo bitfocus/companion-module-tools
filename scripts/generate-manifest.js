@@ -57,7 +57,7 @@ const manifest = {
 	legacyIds: [...(pkgJson.legacy || [])],
 
 	runtime: {
-		type: 'node18',
+		type: 'node22',
 		api: 'nodejs-ipc',
 		apiVersion: '0.0.0',
 
