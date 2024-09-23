@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/bitfocus/companion-module-tools/compare/v2.0.4...v2.1.0) (2024-09-23)
+
+
+### Features
+
+* allow using node22 ([a9bbbaf](https://github.com/bitfocus/companion-module-tools/commit/a9bbbaf84dcf518c5a69ca44f33ca76f63b64a35))
+
 ## [2.0.4](https://github.com/bitfocus/companion-module-tools/compare/v2.0.3...v2.0.4) (2024-09-16)
 
 
