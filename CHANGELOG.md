@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/bitfocus/companion-module-tools/compare/v2.1.0...v2.1.1) (2024-12-17)
+
+
+### Bug Fixes
+
+* add tsconfig for node22 ([8e0a7b1](https://github.com/bitfocus/companion-module-tools/commit/8e0a7b1d29e5f17d7df18d20f487c452797b7d38))
+
 ## [2.1.0](https://github.com/bitfocus/companion-module-tools/compare/v2.0.4...v2.1.0) (2024-09-23)
 
 
