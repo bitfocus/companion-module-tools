@@ -26,16 +26,16 @@
 		"webpack.*"
 	],
 	"dependencies": {
-		"@eslint/js": "^9.10.0",
+		"@eslint/js": "^9.17.0",
 		"eslint-config-prettier": "^9.1.0",
-		"eslint-plugin-n": "^17.10.2",
+		"eslint-plugin-n": "^17.15.0",
 		"eslint-plugin-prettier": "^5.2.1",
 		"find-up": "^7.0.0",
 		"parse-author": "^2.0.0",
 		"tar": "^7.4.3",
-		"webpack": "^5.94.0",
+		"webpack": "^5.97.1",
 		"webpack-cli": "^5.1.4",
-		"zx": "^8.1.6"
+		"zx": "^8.2.4"
 	},
 	"peerDependencies": {
 		"@companion-module/base": "^1.11.0",
@@ -56,9 +56,9 @@
 	},
 	"devDependencies": {
 		"@types/eslint": "^9.6.1",
-		"eslint": "^9.10.0",
-		"prettier": "^3.3.3",
-		"typescript-eslint": "^8.5.0"
+		"eslint": "^9.17.0",
+		"prettier": "^3.4.2",
+		"typescript-eslint": "^8.18.1"
 	},
-	"packageManager": "yarn@4.4.1"
+	"packageManager": "yarn@4.5.3"
 }
