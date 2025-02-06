@@ -8,15 +8,17 @@ import { findUp } from 'find-up'
 import * as tar from 'tar'
 import { validateManifest } from '@companion-module/base'
 import { createRequire } from 'module'
+import * as semver from 'semver'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
 }
 
 if (argv.help) {
-	console.log('Usage: build.js [--dev]')
+	console.log('Usage: build.js [--dev] [--prerelease]')
 	console.log('Builds the companion module')
 	console.log('  --dev: Build in development mode. This will not minify the code, making it easier to debug.')
+	console.log('  --prerelease: Build in prerelease mode. This gets added as metadata to the manifest')
 	process.exit(0)
 }
 
@@ -71,6 +73,12 @@ manifestJson.runtime.entrypoint = '../main.js'
 manifestJson.version = srcPackageJson.version
 manifestJson.runtime.api = 'nodejs-ipc'
 manifestJson.runtime.apiVersion = frameworkPackageJson.version
+
+// Bake in the prerelease flag if using module-base which is new enough
+if (semver.gt(manifestJson.runtime.apiVersion, '1.12.0-0')) {
+	manifestJson.isPreRelease = !!argv.prerelease
+}
+
 await fs.writeFile(path.resolve('./pkg/companion/manifest.json'), JSON.stringify(manifestJson))
 
 // Make sure the manifest is valid
