@@ -41,7 +41,7 @@ module.exports = async (env) => {
 		experiments: {
 			topLevelAwait: true,
 		},
-optimization: {
+		optimization: {
 			minimize: !webpackExt.disableMinifier,
 		},
 		module: {
@@ -66,7 +66,7 @@ optimization: {
 		node: webpackExt.useOriginalStructureDirname
 			? {
 					__dirname: true,
-			  }
+				}
 			: undefined,
 	}
 }
