@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/bitfocus/companion-module-tools/compare/v2.1.1...v2.2.0) (2025-02-06)
+
+
+### Features
+
+* add --prerelease flag ([de5cf7d](https://github.com/bitfocus/companion-module-tools/commit/de5cf7d29c81fd8695773b38dcb560a814d311af))
+
 ## [2.1.1](https://github.com/bitfocus/companion-module-tools/compare/v2.1.0...v2.1.1) (2024-12-17)
 
 
