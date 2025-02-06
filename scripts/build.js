@@ -13,6 +13,13 @@ if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
 }
 
+if (argv.help) {
+	console.log('Usage: build.js [--dev]')
+	console.log('Builds the companion module')
+	console.log('  --dev: Build in development mode. This will not minify the code, making it easier to debug.')
+	process.exit(0)
+}
+
 const require = createRequire(import.meta.url)
 
 async function findModuleDir(cwd) {
