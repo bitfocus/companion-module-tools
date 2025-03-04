@@ -44,6 +44,11 @@ console.log(`Framework path: ${frameworkDir}`)
 // clean old
 await fs.remove('pkg')
 
+// create new
+await fs.mkdir(`pkg`)
+
+const packageBaseDir = path.join('pkg')
+
 const webpackArgs = {
 	ROOT: moduleDir,
 }
@@ -62,7 +67,7 @@ await $`npx webpack -c ${webpackConfig} ${webpackArgsArray}`
 $.cwd = undefined
 
 // copy in the metadata
-await fs.copy('companion', 'pkg/companion')
+await fs.copy('companion', path.join(packageBaseDir, 'companion'))
 
 const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
 const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
@@ -79,7 +84,7 @@ if (semver.gt(manifestJson.runtime.apiVersion, '1.12.0-0')) {
 	manifestJson.isPreRelease = !!argv.prerelease
 }
 
-await fs.writeFile(path.resolve('./pkg/companion/manifest.json'), JSON.stringify(manifestJson))
+await fs.writeFile(path.join(packageBaseDir, 'companion/manifest.json'), JSON.stringify(manifestJson))
 
 // Make sure the manifest is valid
 try {
@@ -128,13 +133,13 @@ if (fs.existsSync(webpackExtPath)) {
 
 	// Copy across any prebuilds that can be loaded corectly
 	if (webpackExt.prebuilds) {
-		await fs.mkdir('pkg/prebuilds')
+		await fs.mkdir(path.join(packageBaseDir, 'prebuilds'))
 
 		for (const lib of webpackExt.prebuilds) {
 			const srcDir = await findModuleDir(require.resolve(lib))
 			const dirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
 			for (const dir of dirs) {
-				await fs.copy(path.join(srcDir, 'prebuilds', dir), path.join('pkg/prebuilds', dir))
+				await fs.copy(path.join(srcDir, 'prebuilds', dir), path.join(packageBaseDir, 'prebuilds', dir))
 			}
 		}
 	}
@@ -147,7 +152,7 @@ if (fs.existsSync(webpackExtPath)) {
 		})
 
 		for (const file of files) {
-			await fs.copy(file, path.join('pkg', path.basename(file)), {
+			await fs.copy(file, path.join(packageBaseDir, path.basename(file)), {
 				overwrite: false,
 			})
 		}
@@ -173,8 +178,8 @@ if (webpackConfigJson.node?.__dirname === true) {
 
 			const prebuildsDir = path.join(thisPath, 'prebuilds')
 			if (dirPkgJson.dependencies?.['node-gyp-build'] && fs.existsSync(prebuildsDir)) {
-				fs.mkdirpSync(path.join('pkg', thisPath))
-				fs.copySync(prebuildsDir, path.join('pkg', prebuildsDir))
+				fs.mkdirpSync(path.join(packageBaseDir, thisPath))
+				fs.copySync(prebuildsDir, path.join(packageBaseDir, prebuildsDir))
 
 				console.log('copying node-gyp-build prebuilds from', thisPath)
 			}
@@ -186,12 +191,12 @@ if (webpackConfigJson.node?.__dirname === true) {
 
 // Write the package.json
 // packageJson.bundleDependencies = Object.keys(packageJson.dependencies)
-await fs.writeFile('pkg/package.json', JSON.stringify(packageJson))
+await fs.writeFile(path.join(packageBaseDir, 'package.json'), JSON.stringify(packageJson))
 
 // If we found any depenendencies for the pkg, install them
 if (Object.keys(packageJson.dependencies).length) {
-	await fs.writeFile('pkg/yarn.lock', '')
-	await $`yarn --cwd pkg install --no-immutable`
+	await fs.writeFile(path.join(packageBaseDir, 'yarn.lock'), '')
+	await $`yarn --cwd ${packageBaseDir} install --no-immutable`
 }
 
 // Create tgz of the build
@@ -200,6 +205,6 @@ await tar
 		{
 			gzip: true,
 		},
-		['pkg'],
+		[packageBaseDir],
 	)
 	.pipe(fs.createWriteStream('pkg.tgz'))
