@@ -68,13 +68,16 @@ export async function buildPackage<M>(
 		process.exit(1)
 	}
 
+	const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
+
 	// clean old
 	await fs.remove('pkg')
 
-	// create new
-	await fs.mkdir(`pkg`)
+	const innerFolderName = toSanitizedDirname(manifestJson.id)
+	const packageBaseDir = path.join('pkg', innerFolderName)
 
-	const packageBaseDir = path.join('pkg')
+	// create new
+	await fs.mkdir(packageBaseDir, { recursive: true })
 
 	const isDev = !!(argv.dev || argv.debug)
 
@@ -102,7 +105,7 @@ export async function buildPackage<M>(
 	// build the code
 	const esbuildOptions: esbuild.BuildOptions = {
 		entryPoints,
-		outdir: path.resolve(moduleDir, 'pkg'),
+		outdir: path.resolve(moduleDir, packageBaseDir),
 		bundle: true,
 		platform: 'node',
 		format: 'esm',
@@ -131,7 +134,6 @@ export async function buildPackage<M>(
 	await fs.copy('companion', path.join(packageBaseDir, 'companion'))
 
 	// Copy the manifest, overriding some properties
-	const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
 	manifestJson.runtime.entrypoint = '../main.js'
 	manifestJson.version = srcPackageJson.version
 	manifestJson.runtime.api = 'nodejs-ipc'
@@ -266,8 +268,9 @@ export async function buildPackage<M>(
 		.create(
 			{
 				gzip: true,
+				cwd: 'pkg',
 			},
-			[packageBaseDir],
+			[innerFolderName],
 		)
 		.pipe(fs.createWriteStream(tgzFile))
 }
