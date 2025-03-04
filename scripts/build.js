@@ -48,7 +48,14 @@ await fs.remove('pkg')
 // create new
 await fs.mkdir(`pkg`)
 
-const packageBaseDir = path.join('pkg')
+const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
+const moduleName = srcPackageJson.name
+
+function toSanitizedDirname(name) {
+	return name.replace(/[^a-zA-Z0-9-]/g, '_')
+}
+
+const packageBaseDir = path.join('pkg', toSanitizedDirname(moduleName))
 
 const webpackArgs = {
 	ROOT: moduleDir,
@@ -70,7 +77,6 @@ $.cwd = undefined
 // copy in the metadata
 await fs.copy('companion', path.join(packageBaseDir, 'companion'))
 
-const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
 const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
 
 // Copy the manifest, overriding some properties
