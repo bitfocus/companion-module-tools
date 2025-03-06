@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.0](https://github.com/bitfocus/companion-module-tools/compare/v2.1.1...v2.2.0) (2025-03-06)
+
+
+### Features
+
+* add --prerelease flag ([de5cf7d](https://github.com/bitfocus/companion-module-tools/commit/de5cf7d29c81fd8695773b38dcb560a814d311af))
+* changed default output of build script to ${package}-${version}.tgz. Added flag -l keeping the legacy behaviour with fileoutput pkg.tgz ([#57](https://github.com/bitfocus/companion-module-tools/issues/57)) ([260a0ff](https://github.com/bitfocus/companion-module-tools/commit/260a0ff61c66611821fc66a5dfbd45c44ec08de6))
+* user definable build filename ([199a9bd](https://github.com/bitfocus/companion-module-tools/commit/199a9bd11c01d0b0e6c8007ca951cc00591b9fad))
+
 ## [2.1.1](https://github.com/bitfocus/companion-module-tools/compare/v2.1.0...v2.1.1) (2024-12-17)
 
 
