@@ -82,7 +82,7 @@ manifestJson.runtime.apiVersion = frameworkPackageJson.version
 
 // Bake in the prerelease flag if using module-base which is new enough
 if (semver.gt(manifestJson.runtime.apiVersion, '1.12.0-0')) {
-	manifestJson.isPreRelease = !!argv.prerelease
+	manifestJson.isPrerelease = !!argv.prerelease
 }
 
 await fs.writeFile(path.join(packageBaseDir, 'companion/manifest.json'), JSON.stringify(manifestJson))
