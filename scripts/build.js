@@ -19,6 +19,7 @@ if (argv.help) {
 	console.log('Builds the companion module')
 	console.log('  --dev: Build in development mode. This will not minify the code, making it easier to debug.')
 	console.log('  --prerelease: Build in prerelease mode. This gets added as metadata to the manifest')
+	console.log('  --output <filename>: Output to a specific filename, without a file extension')
 	process.exit(0)
 }
 
@@ -201,9 +202,9 @@ if (Object.keys(packageJson.dependencies).length) {
 
 // Create tgz of the build
 let tgzFile = `${manifestJson.name}-${manifestJson.version}`
-if(Boolean(argv['l'])) {
-	// -l flag, legacy behaviour creating pkg.tgz output
-	tgzFile = 'pkg'
+if (typeof argv['output'] === 'string') {
+	// -o flag, to allow legacy behaviour creating pkg.tgz output
+	tgzFile = argv['output']
 }
 tgzFile += '.tgz'
 console.log('Writing compressed package output to', tgzFile)
