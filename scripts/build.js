@@ -200,6 +200,14 @@ if (Object.keys(packageJson.dependencies).length) {
 }
 
 // Create tgz of the build
+let tgzFile = `${manifestJson.name}-${manifestJson.version}`
+if(Boolean(argv['l'])) {
+	// -l flag, legacy behaviour creating pkg.tgz output
+	tgzFile = 'pkg'
+}
+tgzFile += '.tgz'
+console.log('Writing compressed package output to', tgzFile)
+
 await tar
 	.create(
 		{
