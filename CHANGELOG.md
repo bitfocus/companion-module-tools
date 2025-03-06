@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/bitfocus/companion-module-tools/compare/v2.2.0...v2.2.1) (2025-03-06)
+
+
+### Bug Fixes
+
+* incorrect isPrerelease capitalisation ([b3399d3](https://github.com/bitfocus/companion-module-tools/commit/b3399d36ea04d65e65774e019d7f03af152f6107))
+
 ## [2.2.0](https://github.com/bitfocus/companion-module-tools/compare/v2.1.1...v2.2.0) (2025-03-06)
 
 
