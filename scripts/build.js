@@ -216,4 +216,4 @@ await tar
 		},
 		[packageBaseDir],
 	)
-	.pipe(fs.createWriteStream('pkg.tgz'))
+	.pipe(fs.createWriteStream(tgzFile))
