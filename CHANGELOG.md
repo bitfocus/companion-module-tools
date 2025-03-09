@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2](https://github.com/bitfocus/companion-module-tools/compare/v2.2.1...v2.2.2) (2025-03-09)
+
+
+### Bug Fixes
+
+* package always being created with old filename ([412014c](https://github.com/bitfocus/companion-module-tools/commit/412014c4c34d591b42ba49ddadbec8a2ef2dab80))
+
 ## [2.2.1](https://github.com/bitfocus/companion-module-tools/compare/v2.2.0...v2.2.1) (2025-03-06)
 
 
