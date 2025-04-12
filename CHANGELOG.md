@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.3](https://github.com/bitfocus/companion-module-tools/compare/v2.2.2...v2.2.3) (2025-04-12)
+
+
+### Bug Fixes
+
+* sanitise output filename ([cb07027](https://github.com/bitfocus/companion-module-tools/commit/cb0702738632da68ccd651f96f72ff038c30f3a1))
+
 ## [2.2.2](https://github.com/bitfocus/companion-module-tools/compare/v2.2.1...v2.2.2) (2025-03-09)
 
 
