@@ -26,7 +26,7 @@ function compactObj(obj) {
  *   enableJest?: boolean,
  *   enableTypescript?: boolean,
  *   ignores?: string[],
- *   rules?: Readonly<import('eslint').Linter.RulesRecord>,
+ *   commonRules?: Readonly<import('eslint').Linter.RulesRecord>,
  *   typescriptRules?: Readonly<import('eslint').Linter.RulesRecord>,
  * }} [options={}] - Options to customize the config
  * @returns {Promise<import('eslint').Linter.Config[]>}
@@ -53,7 +53,7 @@ export async function generateEslintConfig(options = {}) {
 			'no-warning-comments': ['error', { terms: ['nocommit', '@nocommit', '@no-commit'] }],
 			// 'jest/no-mocks-import': 'off',
 
-			...(options.rules || {}),
+			...(options.commonRules || {}),
 		},
 	}
 
