@@ -23,6 +23,10 @@ if (argv.help) {
 	process.exit(0)
 }
 
+function toSanitizedDirname(name) {
+	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
+}
+
 const require = createRequire(import.meta.url)
 
 async function findModuleDir(cwd) {
@@ -201,7 +205,7 @@ if (Object.keys(packageJson.dependencies).length) {
 }
 
 // Create tgz of the build
-let tgzFile = `${manifestJson.name}-${manifestJson.version}`
+let tgzFile = toSanitizedDirname(`${manifestJson.id}-${manifestJson.version}`)
 if (typeof argv['output'] === 'string') {
 	// -o flag, to allow legacy behaviour creating pkg.tgz output
 	tgzFile = argv['output']
