@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/bitfocus/companion-module-tools/compare/v2.2.3...v2.3.0) (2025-04-12)
+
+
+### Features
+
+* Allow additional rules to be provided to the eslint config generator ([#48](https://github.com/bitfocus/companion-module-tools/issues/48)) ([6fb9125](https://github.com/bitfocus/companion-module-tools/commit/6fb9125b1097b598d4b1ba552890034a44c45235))
+
 ## [2.2.3](https://github.com/bitfocus/companion-module-tools/compare/v2.2.2...v2.2.3) (2025-04-12)
 
 
