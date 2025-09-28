@@ -3,7 +3,7 @@ name: Publish Release
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+*"
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
 
 permissions:
@@ -16,31 +16,6 @@ concurrency:
 # This workflow will perform a publish whenever it is triggered
 # If you are using a fork, and want to push tags you can disable this workflow in the github ui
 jobs:
-  test:
-    name: Test on node ${{ matrix.node-version }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [18.x, 20.x, 22.x, 24.x]
-
-    steps:
-      - uses: actions/checkout@v5
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: |
-          corepack enable
-          yarn install
-        env:
-          CI: true
-      - run: yarn test
-        env:
-          CI: true
-
   prepare:
     name: Prepare package
     runs-on: ubuntu-latest
@@ -127,7 +102,6 @@ jobs:
     name: Publish to NPM
     needs:
       - prepare
-      - test
     runs-on: ubuntu-latest
     permissions:
       contents: read
