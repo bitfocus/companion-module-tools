@@ -142,9 +142,9 @@ if (fs.existsSync(webpackExtPath)) {
 
 		for (const lib of webpackExt.prebuilds) {
 			const srcDir = await findModuleDir(require.resolve(lib))
-			const dirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
-			for (const dir of dirs) {
-				await fs.copy(path.join(srcDir, 'prebuilds', dir), path.join(packageBaseDir, 'prebuilds', dir))
+			const filesOrDirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
+			for (const fileOrDir of filesOrDirs) {
+				await fs.copy(path.join(srcDir, 'prebuilds', fileOrDir), path.join(packageBaseDir, 'prebuilds', fileOrDir))
 			}
 		}
 	}
@@ -202,6 +202,33 @@ await fs.writeFile(path.join(packageBaseDir, 'package.json'), JSON.stringify(pac
 if (Object.keys(packageJson.dependencies).length) {
 	await fs.writeFile(path.join(packageBaseDir, 'yarn.lock'), '')
 	await $`yarn --cwd ${packageBaseDir} install --no-immutable`
+}
+
+// Prune any excessive prebuilds
+const prebuildDirName = path.join(packageBaseDir, 'prebuilds')
+if (fs.existsSync(prebuildDirName)) {
+	const prebuildDirs = await fs.readdir(prebuildDirName)
+	for (const dir of prebuildDirs) {
+		let keepDir = true
+		if (dir.match(/freebsd/) || dir.match(/android/)) {
+			// Unsupported platforms
+			keepDir = false
+		} else if (dir.match(/win32-ia32/)) {
+			// 32bit windows is not supported
+			keepDir = false
+		} else if (dir.match(/linux(.+)musl/)) {
+			// linux musl is not supported
+			keepDir = false
+		} else if (dir.match(/linux-arm$/) || dir.match(/linux-arm-gnueabihf/)) {
+			// linux arm (non arm64) is not supported
+			keepDir = false
+		}
+
+		if (!keepDir) {
+			console.log('Removing unneeded prebuild dir:', dir)
+			await fs.rm(path.join(prebuildDirName, dir), { recursive: true, force: true })
+		}
+	}
 }
 
 // Create tgz of the build
