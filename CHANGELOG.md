@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.2](https://github.com/bitfocus/companion-module-tools/compare/v2.4.1...v2.4.2) (2025-10-18)
+
+
+### Bug Fixes
+
+* prune some unnecessary native prebuilt binaries from packages ([f943056](https://github.com/bitfocus/companion-module-tools/commit/f943056f8175c6a8f1619725d5f55e32991064f5))
+
 ## [2.4.1](https://github.com/bitfocus/companion-module-tools/compare/v2.4.0...v2.4.1) (2025-09-28)
 
 
