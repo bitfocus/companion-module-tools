@@ -11,7 +11,9 @@
 	"bin": {
 		"companion-generate-manifest": "scripts/generate-connection-manifest.js",
 		"companion-module-build": "scripts/build-connection.js",
-		"companion-module-check": "scripts/check-connection.js"
+		"companion-module-check": "scripts/check-connection.js",
+		"companion-surface-build": "scripts/build-surface.js",
+		"companion-surface-check": "scripts/check-surface.js"
 	},
 	"engines": {
 		"node": "^18.18 || ^22.18"
@@ -40,6 +42,7 @@
 	},
 	"peerDependencies": {
 		"@companion-module/base": "^1.12.0",
+		"@companion-surface/base": "^0.1.0",
 		"eslint": "^9.36.0",
 		"prettier": "^3.6.2",
 		"typescript-eslint": "^8.44.1"
@@ -52,6 +55,12 @@
 			"optional": true
 		},
 		"typescript-eslint": {
+			"optional": true
+		},
+		"@companion-surface/base": {
+			"optional": true
+		},
+		"@companion-module/base": {
 			"optional": true
 		}
 	},

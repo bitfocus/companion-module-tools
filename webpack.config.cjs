@@ -2,8 +2,8 @@ const path = require('path')
 
 module.exports = async (env) => {
 	if (!env.ROOT) throw new Error(`Missing ROOT`)
+	if (!env.MODULETYPE) throw new Error(`Missing MODULETYPE`)
 
-	const frameworkDir = path.relative(env.ROOT, path.resolve('@companion-module/base'))
 	const pkgJson = require(path.join(env.ROOT, 'package.json'))
 
 	if (!pkgJson.main) throw new Error(`Missing main in package.json`)
@@ -28,10 +28,16 @@ module.exports = async (env) => {
 			...webpackExt.entry,
 		},
 		mode: env.dev ? 'development' : 'production',
-		// devtool: env.dev ? undefined : 'source-map', // TODO - this would be nice, but I think the files have to be uploaded directly to sentry which is problematic...
-		output: {
-			path: path.resolve(env.ROOT, 'pkg'),
-		},
+		output:
+			env.MODULETYPE === 'connection'
+				? {
+						path: path.resolve(env.ROOT, 'pkg'),
+					}
+				: {
+						path: path.resolve(env.ROOT, 'pkg'),
+						filename: 'main.js',
+						library: { type: 'commonjs2' },
+					},
 		context: path.resolve(env.ROOT, '.'),
 		target: 'node',
 		externals: [

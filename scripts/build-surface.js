@@ -17,6 +17,6 @@ if (argv.help) {
 	process.exit(0)
 }
 
-const { validateManifest } = await import('@companion-module/base')
+const { validateSurfaceManifest } = await import('@companion-surface/base')
 
-await buildPackage('@companion-module/base', validateManifest, 'connection')
+await buildPackage('@companion-surface/base', validateSurfaceManifest, 'surface')
