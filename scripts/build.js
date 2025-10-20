@@ -6,7 +6,6 @@ import path from 'path'
 import { fs } from 'zx'
 import { findUp } from 'find-up'
 import * as tar from 'tar'
-import { validateManifest } from '@companion-module/base'
 import { createRequire } from 'module'
 import * as semver from 'semver'
 
@@ -15,13 +14,15 @@ if (process.platform === 'win32') {
 }
 
 if (argv.help) {
-	console.log('Usage: build.js [--dev] [--prerelease]')
-	console.log('Builds the companion module')
+	console.log('Usage: companion-module-build [--dev] [--prerelease]')
+	console.log('Builds the companion connection module')
 	console.log('  --dev: Build in development mode. This will not minify the code, making it easier to debug.')
 	console.log('  --prerelease: Build in prerelease mode. This gets added as metadata to the manifest')
 	console.log('  --output <filename>: Output to a specific filename, without a file extension')
 	process.exit(0)
 }
+
+const { validateManifest } = await import('@companion-module/base')
 
 function toSanitizedDirname(name) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
