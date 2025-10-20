@@ -9,9 +9,9 @@
 		"url": "git+https://github.com/bitfocus/companion-module-tools.git"
 	},
 	"bin": {
-		"companion-generate-manifest": "scripts/generate-manifest.js",
-		"companion-module-build": "scripts/build.js",
-		"companion-module-check": "scripts/check.js"
+		"companion-generate-manifest": "scripts/generate-connection-manifest.js",
+		"companion-module-build": "scripts/build-connection.js",
+		"companion-module-check": "scripts/check-connection.js"
 	},
 	"engines": {
 		"node": "^18.18 || ^22.18"
