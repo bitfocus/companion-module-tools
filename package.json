@@ -28,17 +28,17 @@
 		"webpack.*"
 	],
 	"dependencies": {
-		"@eslint/js": "^9.36.0",
+		"@eslint/js": "^9.38.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-n": "^17.23.1",
 		"eslint-plugin-prettier": "^5.5.4",
 		"find-up": "^7.0.0",
 		"parse-author": "^2.0.0",
-		"semver": "^7.7.2",
+		"semver": "^7.7.3",
 		"tar": "^7.5.1",
-		"webpack": "^5.101.3",
+		"webpack": "^5.102.1",
 		"webpack-cli": "^6.0.1",
-		"zx": "^8.8.4"
+		"zx": "^8.8.5"
 	},
 	"peerDependencies": {
 		"@companion-module/base": "^1.12.0",
@@ -48,6 +48,12 @@
 		"typescript-eslint": "^8.44.1"
 	},
 	"peerDependenciesMeta": {
+		"@companion-module/base": {
+			"optional": true
+		},
+		"@companion-surface/base": {
+			"optional": true
+		},
 		"eslint": {
 			"optional": true
 		},
@@ -56,19 +62,13 @@
 		},
 		"typescript-eslint": {
 			"optional": true
-		},
-		"@companion-surface/base": {
-			"optional": true
-		},
-		"@companion-module/base": {
-			"optional": true
 		}
 	},
 	"devDependencies": {
 		"@types/eslint": "^9.6.1",
-		"eslint": "^9.36.0",
+		"eslint": "^9.38.0",
 		"prettier": "^3.6.2",
-		"typescript-eslint": "^8.44.1"
+		"typescript-eslint": "^8.46.2"
 	},
 	"packageManager": "yarn@4.10.3"
 }
