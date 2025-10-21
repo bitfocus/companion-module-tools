@@ -36,7 +36,11 @@ module.exports = async (env) => {
 				: {
 						path: path.resolve(env.ROOT, 'pkg'),
 						filename: 'main.js',
-						library: { type: 'commonjs2' },
+						library: {
+							type: 'commonjs2',
+							// Avoid producing a double default in the bundle
+							export: 'default',
+						},
 					},
 		context: path.resolve(env.ROOT, '.'),
 		target: 'node',
