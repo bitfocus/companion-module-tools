@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0](https://github.com/bitfocus/companion-module-tools/compare/v2.4.2...v2.5.0) (2025-12-15)
+
+
+### Features
+
+* add support for building surface modules ([55721fe](https://github.com/bitfocus/companion-module-tools/commit/55721fe9282128485021385065b17d32439167d8))
+
+
+### Bug Fixes
+
+* surface module build ([36bfae9](https://github.com/bitfocus/companion-module-tools/commit/36bfae9cfbbafc00ed81dd6f1082bedbe02e2e89))
+
 ## [2.4.2](https://github.com/bitfocus/companion-module-tools/compare/v2.4.1...v2.4.2) (2025-10-18)
 
 
