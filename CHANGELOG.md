@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/bitfocus/companion-module-tools/compare/v2.5.0...v2.6.0) (2026-01-28)
+
+
+### Features
+
+* add `@companion-module/tools/tsconfig/node22/recommended-esm` tsconfig ([3fec18c](https://github.com/bitfocus/companion-module-tools/commit/3fec18c8db8c38c9246b36d458aa59d56f49c108))
+
 ## [2.5.0](https://github.com/bitfocus/companion-module-tools/compare/v2.4.2...v2.5.0) (2025-12-15)
 
 
