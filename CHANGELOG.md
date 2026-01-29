@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/bitfocus/companion-module-tools/compare/v2.6.0...v2.6.1) (2026-01-29)
+
+
+### Bug Fixes
+
+* downgrade find-up for nodejs 18 suppport ([2c35333](https://github.com/bitfocus/companion-module-tools/commit/2c35333b067c30b80e54c9c91e4d3a497dad67b5))
+
 ## [2.6.0](https://github.com/bitfocus/companion-module-tools/compare/v2.5.0...v2.6.0) (2026-01-28)
 
 
