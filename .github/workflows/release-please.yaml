@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main
+      - v1.x
 
 name: release-please
 jobs:
@@ -12,6 +12,7 @@ jobs:
         id: release
         with:
           release-type: node
+          default-branch: ${{ github.ref_name }}
           package-name: release-please-action
       - uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
