@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/bitfocus/companion-module-tools/compare/v1.5.1...v1.5.2) (2026-01-29)
+
+
+### Bug Fixes
+
+* update vulnerable dependencies ([cfc458d](https://github.com/bitfocus/companion-module-tools/commit/cfc458dc14311b433d64eef0a2094d7237355ac7))
+
 ## [1.5.1](https://github.com/bitfocus/companion-module-tools/compare/v1.5.0...v1.5.1) (2024-06-20)
 
 
