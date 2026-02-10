@@ -2,8 +2,9 @@
 // The zx shebang doesn't resolve dependencies correctly
 import 'zx/globals'
 
-import { fs, path, $ } from 'zx'
+import { fs, path } from 'zx'
 import parseAuthor from 'parse-author'
+import { readUTF8File } from './lib/build-util.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
@@ -13,16 +14,21 @@ if (await fs.pathExists('companion/manifest.json')) {
 	throw new Error('Manifest has already been created')
 }
 
-const pkgJsonStr = await fs.readFile('package.json')
-const pkgJson = JSON.parse(pkgJsonStr.toString())
+const pkgJsonStr = await readUTF8File('package.json')
+const pkgJson: any = JSON.parse(pkgJsonStr)
 
-const maintainers = []
+type Maintainer = {
+	name: string
+	email: string
+};
 
-function tryParsePerson(person) {
+const maintainers: Maintainer[] = []
+
+function tryParsePerson(person: any) {
 	try {
 		if (person) {
-			const rawAuthor = typeof person === 'string' ? parseAuthor(person) : person
-			if (rawAuthor.name) {
+			const rawAuthor: any = typeof person === 'string' ? parseAuthor(person) : person
+			if (typeof rawAuthor.name === 'string' && typeof rawAuthor.email === 'string') {
 				maintainers.push({
 					name: rawAuthor.name,
 					email: rawAuthor.email,
