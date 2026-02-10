@@ -1,0 +1,31 @@
+{
+    "include": ["src/**/*.ts", "src/**/*.mts"],
+    "exclude": ["node_modules/**"],
+	"compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./dist",
+		"module": "nodenext",
+		"target": "es2022",
+		"noImplicitAny": true,
+		"moduleResolution": "nodenext",
+		"paths": {
+			"*": ["./node_modules/*"]
+		},
+		"declaration": true,
+		"importHelpers": false,
+		"listFiles": false,
+		"traceResolution": false,
+		"pretty": true,
+		"lib": ["es2022"],
+		"types": ["node"],
+		"strict": true,
+		"alwaysStrict": false,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"skipLibCheck": true,
+	},
+	"compileOnSave": false
+}
