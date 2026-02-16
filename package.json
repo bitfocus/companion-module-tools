@@ -41,7 +41,7 @@
 		"zx": "^8.8.5"
 	},
 	"peerDependencies": {
-		"@companion-module/base": "^1.12.0",
+		"@companion-module/base": "^1.12.0 || ^2.0.0",
 		"@companion-surface/base": "^1.0.0",
 		"eslint": "^9.36.0",
 		"prettier": "^3.6.2",
