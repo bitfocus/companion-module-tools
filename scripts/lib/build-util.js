@@ -31,6 +31,16 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 	console.log(`Tools path: ${toolsDir}`)
 	console.log(`Framework path: ${frameworkDir}`)
 
+	// Check for Yarn PnP
+	const pnpFile = path.join(moduleDir, '.pnp.cjs')
+	const pnpFileAlt = path.join(moduleDir, '.pnp.js')
+	if ((await fs.pathExists(pnpFile)) || (await fs.pathExists(pnpFileAlt))) {
+		console.error("❌ Error: Yarn PnP (Plug'n'Play) is not supported.")
+		console.error('   The companion module build process requires a traditional node_modules structure.')
+		console.error('   Please add "nodeLinker: node-modules" to your .yarnrc.yml file and run "yarn install".')
+		process.exit(1)
+	}
+
 	// clean old
 	await fs.remove('pkg')
 
