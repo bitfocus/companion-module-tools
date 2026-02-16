@@ -19,4 +19,4 @@ if (argv.help) {
 
 const { validateSurfaceManifest } = await import('@companion-surface/base')
 
-await buildPackage('@companion-surface/base', validateSurfaceManifest, 'surface')
+await buildPackage('@companion-surface/base', validateSurfaceManifest, 'surface', '>=1.0.0 <2.0.0')

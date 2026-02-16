@@ -21,7 +21,7 @@ async function findModuleDir(cwd) {
 	return path.dirname(pkgJsonPath)
 }
 
-export async function buildPackage(frameworkPackageName, validateManifest, moduleType) {
+export async function buildPackage(frameworkPackageName, validateManifest, moduleType, versionRange) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
 	const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
@@ -38,6 +38,16 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 		console.error("❌ Error: Yarn PnP (Plug'n'Play) is not supported.")
 		console.error('   The companion module build process requires a traditional node_modules structure.')
 		console.error('   Please add "nodeLinker: node-modules" to your .yarnrc.yml file and run "yarn install".')
+		process.exit(1)
+	}
+
+	const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
+	const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
+
+	// Check framework version if range is specified
+	if (versionRange && !semver.satisfies(frameworkPackageJson.version, versionRange)) {
+		console.error(`Error: ${frameworkPackageName} version ${frameworkPackageJson.version} is not supported.`)
+		console.error(`Required version range: ${versionRange}`)
 		process.exit(1)
 	}
 
@@ -69,9 +79,6 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 
 	// copy in the metadata
 	await fs.copy('companion', path.join(packageBaseDir, 'companion'))
-
-	const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
-	const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
 
 	// Copy the manifest, overriding some properties
 	const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))

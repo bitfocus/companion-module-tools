@@ -19,4 +19,4 @@ if (argv.help) {
 
 const { validateManifest } = await import('@companion-module/base')
 
-await buildPackage('@companion-module/base', validateManifest, 'connection')
+await buildPackage('@companion-module/base', validateManifest, 'connection', '>=1.4.0 <3.0.0')
