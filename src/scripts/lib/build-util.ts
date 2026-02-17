@@ -7,21 +7,35 @@ import * as tar from 'tar'
 import { createRequire } from 'module'
 import * as semver from 'semver'
 
-function toSanitizedDirname(name) {
+function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
 }
 
 const require = createRequire(import.meta.url)
 
-async function findModuleDir(cwd) {
+export async function readUTF8File(filePath: string): Promise<string> {
+	return fs.readFile(filePath, { encoding: 'utf8' })
+}
+
+export async function findModuleDir(cwd: string) {
 	const stat = await fs.stat(cwd)
 	if (stat.isFile()) cwd = path.dirname(cwd)
 
 	const pkgJsonPath = await findUp('package.json', { cwd })
+	if (pkgJsonPath === undefined) {
+		throw new Error('No package.json file found in an enclosing directory')
+	}
 	return path.dirname(pkgJsonPath)
 }
 
-export async function buildPackage(frameworkPackageName, validateManifest, moduleType, versionRange) {
+type ModuleType = 'connection' | 'surface'
+
+export async function buildPackage<M>(
+	frameworkPackageName: string,
+	validateManifest: (manifest: M, looseChecks: boolean) => void,
+	moduleType: ModuleType,
+	versionRange: string
+) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
 	const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
@@ -41,8 +55,8 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 		process.exit(1)
 	}
 
-	const srcPackageJson = JSON.parse(await fs.readFile(path.resolve('./package.json')))
-	const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
+	const srcPackageJson = JSON.parse(await readUTF8File(path.resolve('./package.json')))
+	const frameworkPackageJson = JSON.parse(await readUTF8File(path.join(frameworkDir, 'package.json')))
 
 	// Check framework version if range is specified
 	if (versionRange && !semver.satisfies(frameworkPackageJson.version, versionRange)) {
@@ -59,7 +73,7 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 
 	const packageBaseDir = path.join('pkg')
 
-	const webpackArgs = {
+	const webpackArgs: { ROOT: string; MODULETYPE: ModuleType; dev?: boolean } = {
 		ROOT: moduleDir,
 		MODULETYPE: moduleType,
 	}
@@ -81,7 +95,7 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 	await fs.copy('companion', path.join(packageBaseDir, 'companion'))
 
 	// Copy the manifest, overriding some properties
-	const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))
+	const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
 	manifestJson.runtime.entrypoint = '../main.js'
 	manifestJson.version = srcPackageJson.version
 	manifestJson.runtime.api = 'nodejs-ipc'
@@ -96,14 +110,23 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 
 	// Make sure the manifest is valid
 	try {
-		validateManifest(manifestJson)
+		validateManifest(manifestJson, false)
 	} catch (e) {
 		console.error('Manifest validation failed', e)
 		process.exit(1)
 	}
 
+	type MinimalPackageJson = {
+		name: string
+		version: string
+		license: string
+		type: 'commonjs'
+		dependencies: Record<string, string>
+		resolutions?: Record<string, string>
+	}
+
 	// Generate a minimal package.json
-	const packageJson = {
+	const packageJson: MinimalPackageJson = {
 		name: moduleType === 'connection' ? manifestJson.name : manifestJson.id,
 		version: manifestJson.version,
 		license: manifestJson.license,
@@ -126,8 +149,10 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 
 					for (const external of Object.keys(extGroup)) {
 						const extPath = await findUp('package.json', { cwd: require.resolve(external) })
-						const extJson = JSON.parse(await fs.readFile(extPath))
-						packageJson.dependencies[extJson.name] = extJson.version
+						if (extPath) {
+							const extJson = JSON.parse(await readUTF8File(extPath))
+							packageJson.dependencies[extJson.name] = extJson.version
+						}
 					}
 				}
 			}
@@ -170,7 +195,7 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 	// Copy node-gyp-build prebulds
 	const webpackConfigJson = await require(webpackConfig)(webpackArgs)
 	if (webpackConfigJson.node?.__dirname === true) {
-		const copyNodeGypBuildPrebuilds = (thisPath) => {
+		const copyNodeGypBuildPrebuilds = (thisPath: string) => {
 			const nodeModPath = path.join(thisPath, 'node_modules')
 			if (fs.existsSync(nodeModPath)) {
 				for (const dir of fs.readdirSync(nodeModPath)) {

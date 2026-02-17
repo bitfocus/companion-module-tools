@@ -3,10 +3,9 @@
 import 'zx/globals'
 
 import path from 'path'
-import { fs } from 'zx'
-import { findUp } from 'find-up'
-import { validateSurfaceManifest } from '@companion-surface/base'
+import { validateManifest } from '@companion-module/base'
 import { createRequire } from 'module'
+import { findModuleDir, readUTF8File } from './lib/build-util.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
@@ -14,26 +13,18 @@ if (process.platform === 'win32') {
 
 const require = createRequire(import.meta.url)
 
-async function findModuleDir(cwd) {
-	const stat = await fs.stat(cwd)
-	if (stat.isFile()) cwd = path.dirname(cwd)
-
-	const pkgJsonPath = await findUp('package.json', { cwd })
-	return path.dirname(pkgJsonPath)
-}
-
 // const toolsDir = path.join(__dirname, '..')
 const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
-const frameworkDir = await findModuleDir(require.resolve('@companion-surface/base'))
+const frameworkDir = await findModuleDir(require.resolve('@companion-module/base'))
 console.log(`Checking for: ${process.cwd()}`)
 
 console.log(`Tools path: ${toolsDir}`)
 console.log(`Framework path: ${frameworkDir}`)
 
-const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))
+const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
 
 try {
-	validateSurfaceManifest(manifestJson)
+	validateManifest(manifestJson, false)
 } catch (e) {
 	console.error('Manifest validation failed', e)
 	process.exit(1)

@@ -2,29 +2,40 @@
 	"name": "@companion-module/tools",
 	"version": "2.6.1",
 	"type": "module",
-	"main": "index.js",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-tools.git"
 	},
+	"scripts": {
+		"build": "rimraf dist && tsc -p tsconfig.json"
+	},
 	"bin": {
-		"companion-generate-manifest": "scripts/generate-connection-manifest.js",
-		"companion-module-build": "scripts/build-connection.js",
-		"companion-module-check": "scripts/check-connection.js",
-		"companion-surface-build": "scripts/build-surface.js",
-		"companion-surface-check": "scripts/check-surface.js"
+		"companion-generate-manifest": "./dist/scripts/generate-connection-manifest.js",
+		"companion-module-build": "./dist/scripts/build-connection.js",
+		"companion-module-check": "./dist/scripts/check-connection.js",
+		"companion-surface-build": "./dist/scripts/build-surface.js",
+		"companion-surface-check": "./dist/scripts/check-surface.js"
 	},
 	"engines": {
 		"node": "^18.18 || ^22.18"
 	},
+	"exports": {
+		".": "./dist/index.js",
+		"./eslint/config.mjs": "./dist/eslint/config.mjs",
+		"./scripts/*.js": "./dist/scripts/*.js",
+		"./tsconfig/node18/recommended": "./tsconfig/node18/recommended.json",
+		"./tsconfig/node18/recommended.json": "./tsconfig/node18/recommended.json",
+		"./tsconfig/node22/recommended": "./tsconfig/node22/recommended.json",
+		"./tsconfig/node22/recommended.json": "./tsconfig/node22/recommended.json",
+		"./tsconfig/node22/recommended-esm.json": "./tsconfig/node22/recommended-esm.json",
+		"./.prettierrc.json": "./.prettierrc.json"
+	},
 	"files": [
-		"eslint",
-		"scripts",
-		"tsconfig",
-		".prettierrc.json",
-		"index.js",
 		"CHANGELOG.md",
+		"dist",
+		".prettierrc.json",
+		"tsconfig",
 		"webpack.*"
 	],
 	"dependencies": {
@@ -65,9 +76,17 @@
 		}
 	},
 	"devDependencies": {
+		"@companion-module/base": "^1.12.0",
+		"@companion-surface/base": "^1.0.0",
 		"@types/eslint": "^9.6.1",
+		"@types/fs-extra": "^11.0.4",
+		"@types/node": "^25.2.3",
+		"@types/parse-author": "^2.0.3",
+		"@types/semver": "^7.7.1",
 		"eslint": "^9.39.2",
 		"prettier": "^3.8.1",
+		"rimraf": "^6.1.2",
+		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.54.0"
 	},
 	"packageManager": "yarn@4.12.0"

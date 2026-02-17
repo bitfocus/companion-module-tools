@@ -1,18 +1,10 @@
-// @ts-check
-
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import type { Linter } from 'eslint'
 import eslint from '@eslint/js'
 import neslint from 'eslint-plugin-n'
 
-/**
- *
- * @template T
- * @param {Record<string, T | null | undefined>} obj
- * @returns {Record<string, T>}
- */
-function compactObj(obj) {
-	/** @type {Record<string, T>} */
-	const result = {}
+function compactObj<T>(obj: Record<string, T | null | undefined>): Record<string, T> {
+	const result: Record<string, T> = {}
 
 	for (const [key, value] of Object.entries(obj)) {
 		if (value) result[key] = value
@@ -21,21 +13,18 @@ function compactObj(obj) {
 	return result
 }
 
-/***
- * @param {{
- *   enableJest?: boolean,
- *   enableTypescript?: boolean,
- *   ignores?: string[],
- *   commonRules?: Readonly<import('eslint').Linter.RulesRecord>,
- *   typescriptRules?: Readonly<import('eslint').Linter.RulesRecord>,
- * }} [options={}] - Options to customize the config
- * @returns {Promise<import('eslint').Linter.Config[]>}
- */
-export async function generateEslintConfig(options = {}) {
+type ConfigOptions = {
+	enableJest?: boolean,
+	enableTypescript?: boolean,
+	ignores?: string[],
+	commonRules?: Readonly<Linter.RulesRecord>,
+	typescriptRules?: Readonly<Linter.RulesRecord>,
+};
+
+export async function generateEslintConfig(options: ConfigOptions = {}): Promise<Linter.Config[]> {
 	const tseslint = options.enableTypescript ? await import('typescript-eslint') : null
 
-	/** @type {import('eslint').Linter.Config} */
-	const result = {
+	const result: Linter.Config = {
 		// extends: commonExtends,
 		plugins: compactObj({
 			'@typescript-eslint': tseslint ? tseslint.plugin : null,
