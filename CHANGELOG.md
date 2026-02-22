@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/bitfocus/companion-module-tools/compare/v2.7.0...v2.7.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* allow prerelease versions ([1edc0f6](https://github.com/bitfocus/companion-module-tools/commit/1edc0f6a12c3db1aaf0fc00919dc9ae0fed7a914))
+
 ## [2.7.0](https://github.com/bitfocus/companion-module-tools/compare/v2.6.1...v2.7.0) (2026-02-22)
 
 
