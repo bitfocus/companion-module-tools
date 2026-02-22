@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.2](https://github.com/bitfocus/companion-module-tools/compare/v2.6.1...v2.6.2) (2026-02-22)
+
+
+### Bug Fixes
+
+* refuse to run if yarn pnp is enabled ([91593ba](https://github.com/bitfocus/companion-module-tools/commit/91593bad3e6464e658748a67af2d5caf94b2e405))
+* restrict the allowed versions of api libraries this will build ([bcbeb87](https://github.com/bitfocus/companion-module-tools/commit/bcbeb87b9018146cff0deb9a4411050d63402ec4))
+
 ## [2.6.1](https://github.com/bitfocus/companion-module-tools/compare/v2.6.0...v2.6.1) (2026-01-29)
 
 
