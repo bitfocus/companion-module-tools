@@ -17,6 +17,11 @@ if (argv.help) {
 	process.exit(0)
 }
 
-const { validateManifest } = await import('@companion-module/base')
+let { validateManifest } = await import('@companion-module/base')
+if (!validateManifest) {
+	// If a v2.x version of @companion-module/base is being used, it exports the function as a subpath export
+	const manifestPkg = await import('@companion-module/base/manifest')
+	validateManifest = manifestPkg.validateManifest
+}
 
 await buildPackage('@companion-module/base', validateManifest, 'connection', '>=1.4.0 <3.0.0')
