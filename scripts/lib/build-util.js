@@ -45,7 +45,7 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 	const frameworkPackageJson = JSON.parse(await fs.readFile(path.join(frameworkDir, 'package.json')))
 
 	// Check framework version if range is specified
-	if (versionRange && !semver.satisfies(frameworkPackageJson.version, versionRange)) {
+	if (versionRange && !semver.satisfies(frameworkPackageJson.version, versionRange, { includePrerelease: true })) {
 		console.error(`Error: ${frameworkPackageName} version ${frameworkPackageJson.version} is not supported.`)
 		console.error(`Required version range: ${versionRange}`)
 		process.exit(1)
