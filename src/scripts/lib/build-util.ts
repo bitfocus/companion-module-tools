@@ -38,8 +38,8 @@ export async function buildPackage<M>(
 ) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
-	const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
-	const frameworkDir = await findModuleDir(require.resolve(frameworkPackageName))
+	const toolsDir = await findModuleDir(import.meta.resolve('@companion-module/tools'))
+	const frameworkDir = await findModuleDir(import.meta.resolve(frameworkPackageName))
 	console.log(`Building for: ${process.cwd()}`)
 
 	console.log(`Tools path: ${toolsDir}`)
