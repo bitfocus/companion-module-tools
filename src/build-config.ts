@@ -1,0 +1,37 @@
+export interface ModuleBuildConfig {
+	// forceRemoveNodeGypFromPkg?: boolean
+
+	/**
+	 * Disable the minification of the code bundle
+	 * Some libraries can break when names are mangled as part of minification
+	 */
+	disableMinifier?: boolean
+
+	/**
+	 * Extra files to include in the module package
+	 */
+	extraFiles?: string[]
+
+	// /**
+	//  * Preserve the original value of __dirname
+	//  */
+	// useOriginalStructureDirname?: boolean
+
+	/**
+	 * If the module uses any native libraries, that utilise `pkg-prebuilds`
+	 * specify their names here instead of in externals, to efficiently pack the prebuilt binaries
+	 */
+	prebuilds?: string[]
+
+	/**
+	 * If any used libraries do not like being bundled, you can name them here to preserve them on disk
+	 * Warning: This is discouraged as it can really bloat modules, and cause installation problems in some scenarios
+	 */
+	externals?: string[]
+
+	/**
+	 * Prepare bundles of additional entrypoints
+	 * This is typically useful when using worker-threads
+	 */
+	additionalEntrypoints?: Record<string, string>
+}

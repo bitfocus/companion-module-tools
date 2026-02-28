@@ -8,6 +8,7 @@ module.exports = async (env) => {
 
 	if (!pkgJson.main) throw new Error(`Missing main in package.json`)
 
+	/** @type {import('./src/build-config.js).ModuleBuildconfig}*/
 	let webpackExt = {}
 	try {
 		webpackExt = require(path.join(env.ROOT, 'build-config.cjs'))

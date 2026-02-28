@@ -24,7 +24,8 @@
 		"./scripts/*.js": "./dist/scripts/*.js",
 		"./tsconfig/node22/recommended.json": "./tsconfig/node22/recommended.json",
 		"./tsconfig/node22/recommended-esm.json": "./tsconfig/node22/recommended-esm.json",
-		"./.prettierrc.json": "./.prettierrc.json"
+		"./.prettierrc.json": "./.prettierrc.json",
+		"./build-config": "./dist/build-config.js"
 	},
 	"files": [
 		"CHANGELOG.md",

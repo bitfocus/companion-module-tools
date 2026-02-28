@@ -6,6 +6,7 @@ import { findUp } from 'find-up'
 import * as tar from 'tar'
 import { createRequire } from 'module'
 import * as semver from 'semver'
+import type { ModuleBuildConfig } from '../../build-config.js'
 
 function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
@@ -138,7 +139,7 @@ export async function buildPackage<M>(
 	// Ensure that any externals are added as dependencies
 	const webpackExtPath = path.resolve('build-config.cjs')
 	if (fs.existsSync(webpackExtPath)) {
-		const webpackExt = require(webpackExtPath)
+		const webpackExt: ModuleBuildConfig = require(webpackExtPath)
 
 		// Add any external dependencies, with versions matching what is currntly installed
 		if (webpackExt.externals) {
@@ -156,9 +157,8 @@ export async function buildPackage<M>(
 					}
 				}
 			}
-		}
 
-		if (webpackExt.forceRemoveNodeGypFromPkg) {
+			// If there are any externals, ensure node-gyp is not installed
 			packageJson.resolutions = {
 				'node-gyp': 'npm:empty-npm-package@1.0.0',
 			}
