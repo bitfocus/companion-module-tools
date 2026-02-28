@@ -5,9 +5,6 @@
 		"noImplicitAny": true,
 		"moduleResolution": "node",
 		"sourceMap": true,
-		"paths": {
-			"*": ["../node_modules/*"]
-		},
 		"declaration": false,
 		"importHelpers": false,
 		"listFiles": false,
