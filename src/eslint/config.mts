@@ -14,12 +14,11 @@ function compactObj<T>(obj: Record<string, T | null | undefined>): Record<string
 }
 
 type ConfigOptions = {
-	enableJest?: boolean,
-	enableTypescript?: boolean,
-	ignores?: string[],
-	commonRules?: Readonly<Linter.RulesRecord>,
-	typescriptRules?: Readonly<Linter.RulesRecord>,
-};
+	enableTypescript?: boolean
+	ignores?: string[]
+	commonRules?: Readonly<Linter.RulesRecord>
+	typescriptRules?: Readonly<Linter.RulesRecord>
+}
 
 export async function generateEslintConfig(options: ConfigOptions = {}): Promise<Linter.Config[]> {
 	const tseslint = options.enableTypescript ? await import('typescript-eslint') : null

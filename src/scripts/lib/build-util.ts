@@ -11,19 +11,6 @@ function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
 }
 
-export type ModuleBaseV1API = typeof import('base-v1')
-export type ModuleBaseV2API = typeof import('base-v2')
-
-export async function moduleBaseAPI(): Promise<ModuleBaseV1API | ModuleBaseV2API> {
-	// @ts-ignore User-supplied; TypeScript compels us to cast to v1/v2 aliases to get types right.
-	const base = await import('@companion-module/base') as any
-	return !base.validateManifest ? base as typeof import('base-v2') : base as typeof import('base-v1')
-}
-
-export function isBaseV2API(api: ModuleBaseV1API | ModuleBaseV2API): api is ModuleBaseV2API {
-	return !(api as any).validateManifest
-}
-
 const require = createRequire(import.meta.url)
 
 export async function readUTF8File(filePath: string): Promise<string> {
@@ -47,7 +34,7 @@ export async function buildPackage<M>(
 	frameworkPackageName: string,
 	validateManifest: (manifest: M, looseChecks: boolean) => void,
 	moduleType: ModuleType,
-	versionRange: string
+	versionRange: string,
 ) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()

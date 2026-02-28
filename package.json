@@ -72,14 +72,13 @@
 		}
 	},
 	"devDependencies": {
+		"@companion-module/base": "2.0.0-alpha.0",
 		"@companion-surface/base": "^1.0.0",
 		"@types/eslint": "^9.6.1",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "^25.2.3",
 		"@types/parse-author": "^2.0.3",
 		"@types/semver": "^7.7.1",
-		"base-v1": "npm:@companion-module/base@^1.12.0",
-		"base-v2": "npm:@companion-module/base@2.0.0-alpha.0",
 		"eslint": "^9.39.3",
 		"prettier": "^3.8.1",
 		"rimraf": "^6.1.2",

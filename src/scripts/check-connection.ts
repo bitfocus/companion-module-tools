@@ -3,18 +3,19 @@
 import 'zx/globals'
 
 import path from 'path'
-import { createRequire } from 'module'
-import { findModuleDir, isBaseV2API, moduleBaseAPI, readUTF8File } from './lib/build-util.js'
+import { findModuleDir, readUTF8File } from './lib/build-util.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
 }
 
-const require = createRequire(import.meta.url)
+const { validateManifest } = await import('@companion-module/base/manifest').catch((e) => {
+	throw new Error(`Failed to load @companion-module/base. Have you installed a compatible version?: ${e?.message ?? e}`)
+})
 
 // const toolsDir = path.join(__dirname, '..')
-const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
-const frameworkDir = await findModuleDir(require.resolve('@companion-module/base'))
+const toolsDir = await findModuleDir(import.meta.resolve('@companion-module/tools'))
+const frameworkDir = await findModuleDir(import.meta.resolve('@companion-module/base'))
 console.log(`Checking for: ${process.cwd()}`)
 
 console.log(`Tools path: ${toolsDir}`)
@@ -23,9 +24,7 @@ console.log(`Framework path: ${frameworkDir}`)
 const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
 
 try {
-	const base = await moduleBaseAPI()
-	if (!isBaseV2API(base))
-		base.validateManifest(manifestJson, false)
+	validateManifest(manifestJson, false)
 } catch (e) {
 	console.error('Manifest validation failed', e)
 	process.exit(1)
