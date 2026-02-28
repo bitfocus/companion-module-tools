@@ -20,6 +20,7 @@
 		"node": "^22.18"
 	},
 	"exports": {
+		".": "./dist/index.js",
 		"./eslint/config.mjs": "./dist/eslint/config.mjs",
 		"./scripts/*.js": "./dist/scripts/*.js",
 		"./tsconfig/node22/recommended.json": "./tsconfig/node22/recommended.json",
@@ -31,19 +32,17 @@
 		"CHANGELOG.md",
 		"dist",
 		".prettierrc.json",
-		"tsconfig",
-		"webpack.*"
+		"tsconfig"
 	],
 	"dependencies": {
 		"@eslint/js": "^9.39.3",
+		"esbuild": "^0.27.3",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-n": "^17.24.0",
 		"eslint-plugin-prettier": "^5.5.5",
 		"find-up": "^8.0.0",
 		"semver": "^7.7.4",
 		"tar": "^7.5.9",
-		"webpack": "^5.105.3",
-		"webpack-cli": "^6.0.1",
 		"zx": "^8.8.5"
 	},
 	"peerDependencies": {

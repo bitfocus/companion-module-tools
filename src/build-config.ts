@@ -1,6 +1,4 @@
 export interface ModuleBuildConfig {
-	// forceRemoveNodeGypFromPkg?: boolean
-
 	/**
 	 * Disable the minification of the code bundle
 	 * Some libraries can break when names are mangled as part of minification

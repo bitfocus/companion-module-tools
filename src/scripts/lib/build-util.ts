@@ -6,6 +6,7 @@ import { findUp } from 'find-up'
 import * as tar from 'tar'
 import { createRequire } from 'module'
 import * as semver from 'semver'
+import * as esbuild from 'esbuild'
 import type { ModuleBuildConfig } from '../../build-config.js'
 
 function toSanitizedDirname(name: string) {
@@ -39,8 +40,9 @@ export async function buildPackage<M>(
 ) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
-	const toolsDir = await findModuleDir(import.meta.resolve('@companion-module/tools'))
-	const frameworkDir = await findModuleDir(import.meta.resolve(frameworkPackageName))
+	const moduleRequire = createRequire(path.join(moduleDir, 'package.json'))
+	const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
+	const frameworkDir = await findModuleDir(require.resolve(frameworkPackageName))
 	console.log(`Building for: ${process.cwd()}`)
 
 	console.log(`Tools path: ${toolsDir}`)
@@ -74,23 +76,56 @@ export async function buildPackage<M>(
 
 	const packageBaseDir = path.join('pkg')
 
-	const webpackArgs: { ROOT: string; MODULETYPE: ModuleType; dev?: boolean } = {
-		ROOT: moduleDir,
-		MODULETYPE: moduleType,
-	}
-	if (argv.dev || argv.debug) webpackArgs['dev'] = true
+	const isDev = !!(argv.dev || argv.debug)
 
-	const webpackArgsArray = []
-	for (const [k, v] of Object.entries(webpackArgs)) {
-		webpackArgsArray.push(`--env`, v === true ? k : `${k}=${v}`)
+	// Load optional build config from the module directory
+	let buildConfig: ModuleBuildConfig = {}
+	const buildConfigPath = path.resolve('build-config.cjs')
+	if (fs.existsSync(buildConfigPath)) {
+		buildConfig = require(buildConfigPath)
+		console.log('Found additional build configuration')
+	}
+
+	// Flatten externals to a string array for esbuild
+	const externalsRaw: string[] = Array.isArray(buildConfig.externals)
+		? buildConfig.externals
+		: buildConfig.externals
+			? [buildConfig.externals]
+			: []
+
+	// Build entry points map
+	const entryPoints: Record<string, string> = {
+		main: './' + srcPackageJson.main,
+		...buildConfig.additionalEntrypoints,
 	}
 
 	// build the code
-	$.cwd = toolsDir
-	const webpackConfig = path.join(toolsDir, 'webpack.config.cjs').replace(/\\/g, '/') // Fix slashes because windows is a pain
-	// use npx to invoke. manual paths does not work on windows, and using `yarn` requires corepack
-	await $`npx webpack -c ${webpackConfig} ${webpackArgsArray}`
-	$.cwd = undefined
+	const esbuildOptions: esbuild.BuildOptions = {
+		entryPoints,
+		outdir: path.resolve(moduleDir, 'pkg'),
+		bundle: true,
+		platform: 'node',
+		format: 'esm',
+		minify: isDev ? false : !buildConfig.disableMinifier,
+		sourcemap: isDev ? 'inline' : false,
+		target: 'node22',
+		external: externalsRaw,
+		// When bundling to ESM, `require`, `__dirname`, and `__filename` are not defined.
+		// Many CJS transitive dependencies call require() for Node built-ins (e.g. `require('events')`).
+		// Inject a small header that recreates them with ESM-native APIs so they work at runtime.
+		banner: {
+			js: [
+				`import { createRequire as __esbuild_createRequire } from 'module';`,
+				`import { fileURLToPath as __esbuild_fileURLToPath } from 'url';`,
+				`import { dirname as __esbuild_dirname } from 'path';`,
+				`const require = __esbuild_createRequire(import.meta.url);`,
+				`const __filename = __esbuild_fileURLToPath(import.meta.url);`,
+				`const __dirname = __esbuild_dirname(__filename);`,
+			].join('\n'),
+		},
+	}
+
+	await esbuild.build(esbuildOptions)
 
 	// copy in the metadata
 	await fs.copy('companion', path.join(packageBaseDir, 'companion'))
@@ -121,7 +156,7 @@ export async function buildPackage<M>(
 		name: string
 		version: string
 		license: string
-		type: 'commonjs'
+		type: 'module'
 		dependencies: Record<string, string>
 		resolutions?: Record<string, string>
 	}
@@ -132,94 +167,53 @@ export async function buildPackage<M>(
 		version: manifestJson.version,
 		license: manifestJson.license,
 		// Minimal content
-		type: 'commonjs',
+		type: 'module',
 		dependencies: {},
 	}
 
 	// Ensure that any externals are added as dependencies
-	const webpackExtPath = path.resolve('build-config.cjs')
-	if (fs.existsSync(webpackExtPath)) {
-		const webpackExt: ModuleBuildConfig = require(webpackExtPath)
-
-		// Add any external dependencies, with versions matching what is currntly installed
-		if (webpackExt.externals) {
-			const extArray = Array.isArray(webpackExt.externals) ? webpackExt.externals : [webpackExt.externals]
-			for (const extGroup of extArray) {
-				if (typeof extGroup === 'object') {
-					// TODO - does this need to be a stricter object check?
-
-					for (const external of Object.keys(extGroup)) {
-						const extPath = await findUp('package.json', { cwd: require.resolve(external) })
-						if (extPath) {
-							const extJson = JSON.parse(await readUTF8File(extPath))
-							packageJson.dependencies[extJson.name] = extJson.version
-						}
-					}
-				}
-			}
-
-			// If there are any externals, ensure node-gyp is not installed
-			packageJson.resolutions = {
-				'node-gyp': 'npm:empty-npm-package@1.0.0',
+	if (externalsRaw.length) {
+		// Add any external dependencies with versions matching what is currently installed.
+		// Externals are plain package-name strings when using esbuild.
+		for (const external of externalsRaw) {
+			const extPath = await findUp('package.json', { cwd: moduleRequire.resolve(external) })
+			if (extPath) {
+				const extJson = JSON.parse(await readUTF8File(extPath))
+				packageJson.dependencies[extJson.name] = extJson.version
 			}
 		}
 
-		// Copy across any prebuilds that can be loaded corectly
-		if (webpackExt.prebuilds) {
-			await fs.mkdir(path.join(packageBaseDir, 'prebuilds'))
-
-			for (const lib of webpackExt.prebuilds) {
-				const srcDir = await findModuleDir(require.resolve(lib))
-				const filesOrDirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
-				for (const fileOrDir of filesOrDirs) {
-					await fs.copy(path.join(srcDir, 'prebuilds', fileOrDir), path.join(packageBaseDir, 'prebuilds', fileOrDir))
-				}
-			}
+		// Ensure node-gyp is excluded from the installed deps in the output package
+		packageJson.resolutions = {
+			'node-gyp': 'npm:empty-npm-package@1.0.0',
 		}
+	}
 
-		// copy extra files
-		if (Array.isArray(webpackExt.extraFiles)) {
-			const files = await globby(webpackExt.extraFiles, {
-				expandDirectories: false,
-				onlyFiles: false,
-			})
+	// Copy across any prebuilds that can be loaded correctly
+	if (buildConfig.prebuilds) {
+		await fs.mkdir(path.join(packageBaseDir, 'prebuilds'))
 
-			for (const file of files) {
-				await fs.copy(file, path.join(packageBaseDir, path.basename(file)), {
-					overwrite: false,
-				})
+		for (const lib of buildConfig.prebuilds) {
+			const srcDir = await findModuleDir(moduleRequire.resolve(lib))
+			const filesOrDirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
+			for (const fileOrDir of filesOrDirs) {
+				await fs.copy(path.join(srcDir, 'prebuilds', fileOrDir), path.join(packageBaseDir, 'prebuilds', fileOrDir))
 			}
 		}
 	}
 
-	// Copy node-gyp-build prebulds
-	const webpackConfigJson = await require(webpackConfig)(webpackArgs)
-	if (webpackConfigJson.node?.__dirname === true) {
-		const copyNodeGypBuildPrebuilds = (thisPath: string) => {
-			const nodeModPath = path.join(thisPath, 'node_modules')
-			if (fs.existsSync(nodeModPath)) {
-				for (const dir of fs.readdirSync(nodeModPath)) {
-					const modDir = path.join(nodeModPath, dir)
-					copyNodeGypBuildPrebuilds(modDir)
-				}
-			}
+	// copy extra files
+	if (Array.isArray(buildConfig.extraFiles)) {
+		const files = await globby(buildConfig.extraFiles, {
+			expandDirectories: false,
+			onlyFiles: false,
+		})
 
-			const pkgJsonPath = path.join(thisPath, 'package.json')
-			if (thisPath && fs.existsSync(pkgJsonPath)) {
-				const dirPkgJsonStr = fs.readFileSync(pkgJsonPath)
-				const dirPkgJson = JSON.parse(dirPkgJsonStr.toString())
-
-				const prebuildsDir = path.join(thisPath, 'prebuilds')
-				if (dirPkgJson.dependencies?.['node-gyp-build'] && fs.existsSync(prebuildsDir)) {
-					fs.mkdirpSync(path.join(packageBaseDir, thisPath))
-					fs.copySync(prebuildsDir, path.join(packageBaseDir, prebuildsDir))
-
-					console.log('copying node-gyp-build prebuilds from', thisPath)
-				}
-			}
+		for (const file of files) {
+			await fs.copy(file, path.join(packageBaseDir, path.basename(file)), {
+				overwrite: false,
+			})
 		}
-
-		copyNodeGypBuildPrebuilds('')
 	}
 
 	// Write the package.json
