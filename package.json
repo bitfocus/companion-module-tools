@@ -36,7 +36,7 @@
 		"parse-author": "^2.0.0",
 		"semver": "^7.7.4",
 		"tar": "^7.5.9",
-		"webpack": "^5.105.2",
+		"webpack": "^5.105.3",
 		"webpack-cli": "^6.0.1",
 		"zx": "^8.8.5"
 	},
@@ -68,7 +68,7 @@
 		"@types/eslint": "^9.6.1",
 		"eslint": "^9.39.3",
 		"prettier": "^3.8.1",
-		"typescript-eslint": "^8.56.0"
+		"typescript-eslint": "^8.56.1"
 	},
 	"packageManager": "yarn@4.12.0"
 }
