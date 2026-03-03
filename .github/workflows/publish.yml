@@ -83,7 +83,7 @@ jobs:
             yarn version ${OLD_VERSION}-${{ steps.do-publish.outputs.prerelease }}
           fi
 
-          # yarn build
+          yarn build
         env:
           CI: true
 

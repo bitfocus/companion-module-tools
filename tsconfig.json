@@ -1,14 +1,17 @@
 {
+    "include": ["src/**/*.ts", "src/**/*.mts"],
+    "exclude": ["node_modules/**"],
 	"compilerOptions": {
-		"module": "commonjs",
+        "rootDir": "./src",
+        "outDir": "./dist",
+		"module": "nodenext",
 		"target": "es2022",
 		"noImplicitAny": true,
-		"moduleResolution": "node",
-		"sourceMap": true,
+		"moduleResolution": "nodenext",
 		"paths": {
-			"*": ["../node_modules/*"]
+			"*": ["./node_modules/*"]
 		},
-		"declaration": false,
+		"declaration": true,
 		"importHelpers": false,
 		"listFiles": false,
 		"traceResolution": false,
@@ -23,8 +26,6 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"skipLibCheck": true,
-		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true
 	},
 	"compileOnSave": false
 }
