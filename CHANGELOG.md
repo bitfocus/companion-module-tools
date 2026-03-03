@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.0.0](https://github.com/bitfocus/companion-module-tools/compare/v2.7.1...v3.0.0) (2026-03-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* simplify and remove support for module api v1
+* require node22 and module-base 2.0
+
+### Features
+
+* Add type declarations for `@companion-module/tools/eslint/config.mjs` by converting the repository code to TypeScript. ([f4220e8](https://github.com/bitfocus/companion-module-tools/commit/f4220e8c0ec8a3418d68483fbd562bfb2d767a12))
+* replace webpack with esbuild ([395d28d](https://github.com/bitfocus/companion-module-tools/commit/395d28d39c7b31e4ca28cc8e0468c14e4733952e))
+* require node22 and module-base 2.0 ([bb3fadc](https://github.com/bitfocus/companion-module-tools/commit/bb3fadc9474cdbd77e4ade34e4f8964de1e17db3))
+* simplify and remove support for module api v1 ([6648b13](https://github.com/bitfocus/companion-module-tools/commit/6648b132a1af12e0fe0d0e300b5bc4bfee201f45))
+
 ## [2.7.1](https://github.com/bitfocus/companion-module-tools/compare/v2.7.0...v2.7.1) (2026-02-22)
 
 
