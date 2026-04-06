@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/bitfocus/companion-module-tools/compare/v3.0.0...v3.0.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* ts6 support ([f465aac](https://github.com/bitfocus/companion-module-tools/commit/f465aac35e79d8cdee0f846a7d005c23d2aaf3e1))
+
 ## [3.0.0](https://github.com/bitfocus/companion-module-tools/compare/v2.7.1...v3.0.0) (2026-03-03)
 
 
