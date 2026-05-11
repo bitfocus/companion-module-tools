@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.2](https://github.com/bitfocus/companion-module-tools/compare/v2.7.1...v2.7.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* api 2.0 connections not always exporting class ([4538291](https://github.com/bitfocus/companion-module-tools/commit/4538291c3ef4b96a256bdd98f576eee6018e7e1d))
+
 ## [2.7.1](https://github.com/bitfocus/companion-module-tools/compare/v2.7.0...v2.7.1) (2026-02-22)
 
 
