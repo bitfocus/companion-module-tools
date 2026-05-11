@@ -32,6 +32,10 @@ module.exports = async (env) => {
 			env.MODULETYPE === 'connection'
 				? {
 						path: path.resolve(env.ROOT, 'pkg'),
+						filename: 'main.js',
+						library: {
+							type: 'commonjs2',
+						},
 					}
 				: {
 						path: path.resolve(env.ROOT, 'pkg'),
