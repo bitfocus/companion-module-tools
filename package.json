@@ -36,7 +36,7 @@
 	],
 	"dependencies": {
 		"@eslint/js": "^9.39.4",
-		"esbuild": "^0.27.7",
+		"esbuild": "^0.28.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-n": "^17.24.0",
 		"eslint-plugin-prettier": "^5.5.5",
