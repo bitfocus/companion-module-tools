@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/bitfocus/companion-module-tools/compare/v3.0.2...v3.1.0) (2026-06-26)
+
+
+### Features
+
+* add node26 tsconfig ([bb73011](https://github.com/bitfocus/companion-module-tools/commit/bb7301104fd641dc3dfda0bd7abef4dc36870fb5))
+
 ## [3.0.2](https://github.com/bitfocus/companion-module-tools/compare/v3.0.1...v3.0.2) (2026-06-19)
 
 
