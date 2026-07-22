@@ -1,6 +1,7 @@
-import { readdir, realpath, readFile } from 'node:fs/promises'
+import { readdir, realpath, readFile, stat } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
-import type * as esbuild from 'esbuild'
+import * as esbuild from 'esbuild'
 
 export type ShippedPackageKind = 'project' | 'bundled' | 'external' | 'prebuild'
 
@@ -15,6 +16,22 @@ export interface ShippedPackage {
 
 export interface MetafilePackageCollection {
 	packages: ShippedPackage[]
+	diagnostics: string[]
+}
+
+export interface LegalText {
+	role: 'license' | 'notice' | 'source-comment'
+	filename: string
+	content: string
+	sha256: string
+}
+
+export interface ShippedPackageLegalRecord extends ShippedPackage {
+	legalTexts: LegalText[]
+}
+
+export interface PackageLegalMaterial {
+	package: ShippedPackageLegalRecord
 	diagnostics: string[]
 }
 
@@ -148,9 +165,103 @@ export async function collectPrebuildPackages(moduleRequire: NodeRequire, specif
 	return [...packages.values()]
 }
 
+const MAX_LEGAL_FILE_SIZE = 1024 * 1024
+
+function sha256(content: string): string {
+	return createHash('sha256').update(content).digest('hex')
+}
+
 function isPathInside(childPath: string, parentPath: string): boolean {
 	const relativePath = path.relative(parentPath, childPath)
 	return relativePath === '' || (!relativePath.startsWith(`..${path.sep}`) && relativePath !== '..' && !path.isAbsolute(relativePath))
+}
+
+function legalRole(filename: string): LegalText['role'] | undefined {
+	if (/^(license|licence|copying)/i.test(filename)) return 'license'
+	if (/^notice/i.test(filename)) return 'notice'
+	return undefined
+}
+
+async function readLegalText(filePath: string, packageRoot: string, role: LegalText['role']): Promise<LegalText | undefined> {
+	const fileStat = await stat(filePath)
+	if (!fileStat.isFile() || fileStat.size > MAX_LEGAL_FILE_SIZE) return undefined
+	const content = await readFile(filePath, 'utf8')
+	if (content.includes('\0')) return undefined
+	return { role, filename: normalizeInventoryPath(filePath, packageRoot), content, sha256: sha256(content) }
+}
+
+function sourceLoader(filename: string): esbuild.Loader | undefined {
+	switch (path.extname(filename).toLowerCase()) {
+		case '.js':
+		case '.mjs':
+		case '.cjs':
+			return 'js'
+		case '.ts':
+			return 'ts'
+		case '.tsx':
+			return 'tsx'
+		default:
+			return undefined
+	}
+}
+
+export async function collectPackageLegalMaterial(packageInfo: ShippedPackage): Promise<PackageLegalMaterial> {
+	const diagnostics: string[] = []
+	const candidateFiles = new Map<string, LegalText['role']>()
+	for (const entry of await readdir(packageInfo.packageRoot, { withFileTypes: true })) {
+		if (!entry.isFile()) continue
+		const role = legalRole(entry.name)
+		if (role) candidateFiles.set(entry.name, role)
+	}
+
+	const seeLicenseMatch = /^SEE LICENSE IN (.+)$/i.exec(packageInfo.declaredLicense ?? '')
+	if (seeLicenseMatch) {
+		const explicitPath = path.resolve(packageInfo.packageRoot, seeLicenseMatch[1])
+		if (!isPathInside(explicitPath, packageInfo.packageRoot)) {
+			diagnostics.push(`Ignoring license file outside package root: ${seeLicenseMatch[1]}`)
+		} else {
+			candidateFiles.set(normalizeInventoryPath(explicitPath, packageInfo.packageRoot), 'license')
+		}
+	}
+
+	const legalTexts: LegalText[] = []
+	for (const [filename, role] of [...candidateFiles.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+		try {
+			const legalText = await readLegalText(path.join(packageInfo.packageRoot, filename), packageInfo.packageRoot, role)
+			if (legalText) legalTexts.push(legalText)
+			else diagnostics.push(`Ignoring unreadable, binary, or oversized legal file: ${filename}`)
+		} catch {
+			diagnostics.push(`Ignoring unreadable legal file: ${filename}`)
+		}
+	}
+
+	if (!legalTexts.some((text) => text.role === 'license')) {
+		for (const sourcePath of [...packageInfo.contributingPaths].sort()) {
+			const loader = sourceLoader(sourcePath)
+			if (!loader) {
+				diagnostics.push(`Ignoring unsupported source file for legal comments: ${sourcePath}`)
+				continue
+			}
+			try {
+				const source = await readFile(path.join(packageInfo.packageRoot, sourcePath), 'utf8')
+				const result = await esbuild.transform(source, { loader, legalComments: 'external' })
+				if (result.legalComments) {
+					legalTexts.push({
+						role: 'source-comment',
+						filename: sourcePath,
+						content: result.legalComments,
+						sha256: sha256(result.legalComments),
+					})
+				}
+			} catch {
+				diagnostics.push(`Ignoring unreadable source file for legal comments: ${sourcePath}`)
+			}
+		}
+	}
+
+	const uniqueTexts = new Map<string, LegalText>()
+	for (const legalText of legalTexts) uniqueTexts.set(`${legalText.role}:${legalText.filename}:${legalText.sha256}`, legalText)
+	return { package: { ...packageInfo, legalTexts: [...uniqueTexts.values()] }, diagnostics }
 }
 
 export async function collectMetafilePackages(
