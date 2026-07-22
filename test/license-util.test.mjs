@@ -52,13 +52,22 @@ test('collects installed and prebuild package owners without following symlinks'
 		['external-a', '1.0.0'],
 		['transitive-b', '2.0.0'],
 		['nested-c', '3.0.0'],
+		['@scope/scoped', '4.0.0'],
 	]) {
 		const packageDir =
-			name === 'nested-c' ? path.join(nodeModulesDir, 'external-a', 'node_modules', name) : path.join(nodeModulesDir, name)
+			name === 'nested-c'
+				? path.join(nodeModulesDir, 'external-a', 'node_modules', name)
+				: name === '@scope/scoped'
+					? path.join(nodeModulesDir, '@scope', 'scoped')
+					: path.join(nodeModulesDir, name)
 		await writeJson(path.join(packageDir, 'package.json'), { name, version, license: 'MIT' })
 	}
 	await mkdir(path.join(nodeModulesDir, '.bin'), { recursive: true })
-	await symlink(path.join(nodeModulesDir, 'external-a'), path.join(nodeModulesDir, 'linked-external'))
+	await symlink(path.join(nodeModulesDir, 'external-a'), path.join(nodeModulesDir, 'linked-external'), 'dir')
+	const outsideDir = await mkdtemp(path.join(tmpdir(), 'license-outside-'))
+	t.after(() => rm(outsideDir, { recursive: true, force: true }))
+	await writeJson(path.join(outsideDir, 'package.json'), { name: 'outside-link', version: '1.0.0' })
+	await symlink(outsideDir, path.join(nodeModulesDir, 'outside-link'), 'dir')
 
 	await writeJson(path.join(projectDir, 'node_modules', 'prebuild-lib', 'package.json'), {
 		name: 'prebuild-lib',
@@ -72,6 +81,7 @@ test('collects installed and prebuild package owners without following symlinks'
 	assert.deepEqual(
 		installed.map((pkg) => [pkg.name, pkg.version, pkg.kind, [...pkg.contributingPaths]]),
 		[
+			['@scope/scoped', '4.0.0', 'external', []],
 			['external-a', '1.0.0', 'external', []],
 			['nested-c', '3.0.0', 'external', []],
 			['transitive-b', '2.0.0', 'external', []],
@@ -79,9 +89,9 @@ test('collects installed and prebuild package owners without following symlinks'
 	)
 
 	const moduleRequire = createRequire(path.join(projectDir, 'package.json'))
-	const prebuilds = await collectPrebuildPackages(moduleRequire, ['prebuild-lib/index.js'])
+	const prebuilds = await collectPrebuildPackages(moduleRequire, ['prebuild-lib', 'prebuild-lib/index.js'])
 	assert.deepEqual(prebuilds.map((pkg) => [pkg.name, pkg.kind, [...pkg.contributingPaths]]), [
-		['prebuild-lib', 'prebuild', ['prebuilds/ (from prebuild-lib/index.js)']],
+		['prebuild-lib', 'prebuild', ['prebuilds/ (from prebuild-lib)', 'prebuilds/ (from prebuild-lib/index.js)']],
 	])
 })
 
@@ -111,9 +121,10 @@ test('collects only positive-byte JavaScript metafile contributors by package', 
 		},
 	}
 
-	const packages = await collectMetafilePackages(projectDir, metafile)
+	const collection = await collectMetafilePackages(projectDir, metafile)
+	assert.deepEqual(collection.diagnostics, [])
 	assert.deepEqual(
-		packages.map((pkg) => ({
+		collection.packages.map((pkg) => ({
 			kind: pkg.kind,
 			name: pkg.name,
 			version: pkg.version,
@@ -126,4 +137,54 @@ test('collects only positive-byte JavaScript metafile contributors by package', 
 			{ kind: 'bundled', name: '@scope/nested', version: '3.0.0', declaredLicense: 'ISC', contributingPaths: ['lib/index.js'] },
 		],
 	)
+})
+
+test('attributes symlinked dependencies as dependencies', async (t) => {
+	const projectDir = await createProjectFixture()
+	t.after(() => rm(projectDir, { recursive: true, force: true }))
+	const linkedPackageDir = await mkdtemp(path.join(tmpdir(), 'license-linked-'))
+	t.after(() => rm(linkedPackageDir, { recursive: true, force: true }))
+	await writeJson(path.join(linkedPackageDir, 'package.json'), { name: 'linked-package', version: '1.0.0', license: 'MIT' })
+	await writeFile(path.join(linkedPackageDir, 'index.js'), 'export {}')
+	await symlink(linkedPackageDir, path.join(projectDir, 'node_modules', 'linked-package'), 'dir')
+
+	const collection = await collectMetafilePackages(projectDir, {
+		inputs: {},
+		outputs: {
+			'pkg/example/main.js': {
+				imports: [],
+				exports: [],
+				inputs: { 'node_modules/linked-package/index.js': { bytesInOutput: 10 } },
+			},
+		},
+	})
+	assert.deepEqual(collection.packages.map((pkg) => [pkg.kind, pkg.name, [...pkg.contributingPaths]]), [
+		['bundled', 'linked-package', ['index.js']],
+	])
+})
+
+test('reports virtual and outside metafile inputs without treating them as project files', async (t) => {
+	const projectDir = await createProjectFixture()
+	t.after(() => rm(projectDir, { recursive: true, force: true }))
+	const metafile = {
+		inputs: {},
+		outputs: {
+			'pkg/example/main.js': {
+				imports: [],
+				exports: [],
+				inputs: {
+					'src/main.js': { bytesInOutput: 10 },
+					'<stdin>': { bytesInOutput: 10 },
+					'../outside.js': { bytesInOutput: 10 },
+				},
+			},
+		},
+	}
+
+	const collection = await collectMetafilePackages(projectDir, metafile)
+	assert.deepEqual(collection.packages.map((pkg) => [...pkg.contributingPaths]), [['src/main.js']])
+	assert.deepEqual(collection.diagnostics, [
+		'Ignoring virtual esbuild input: <stdin>',
+		'Ignoring esbuild input outside module directory: ../outside.js',
+	])
 })
