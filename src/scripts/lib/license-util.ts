@@ -1,4 +1,4 @@
-import { realpath, readFile } from 'node:fs/promises'
+import { readdir, realpath, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type * as esbuild from 'esbuild'
 
@@ -58,6 +58,89 @@ function getContributingInputs(metafile: esbuild.Metafile): string[] {
 		}
 	}
 	return [...inputs]
+}
+
+function packageFromJson(kind: ShippedPackageKind, packageRoot: string, packageJson: PackageJson): ShippedPackage {
+	return {
+		kind,
+		name: packageJson.name ?? path.basename(packageRoot),
+		version: packageJson.version,
+		declaredLicense: typeof packageJson.license === 'string' ? packageJson.license : undefined,
+		packageRoot,
+		contributingPaths: new Set(),
+	}
+}
+
+export async function collectInstalledPackages(nodeModulesDir: string): Promise<ShippedPackage[]> {
+	const packages: ShippedPackage[] = []
+
+	async function scan(currentNodeModulesDir: string): Promise<void> {
+		let entries
+		try {
+			entries = await readdir(currentNodeModulesDir, { withFileTypes: true })
+		} catch {
+			return
+		}
+
+		for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+			if (entry.name === '.bin' || entry.isSymbolicLink()) continue
+			if (entry.name.startsWith('@')) {
+				if (!entry.isDirectory()) continue
+				await scanScopedPackages(path.join(currentNodeModulesDir, entry.name))
+				continue
+			}
+			if (!entry.isDirectory()) continue
+			await scanPackage(path.join(currentNodeModulesDir, entry.name))
+		}
+	}
+
+	async function scanScopedPackages(scopeDir: string): Promise<void> {
+		const entries = await readdir(scopeDir, { withFileTypes: true })
+		for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+			if (entry.isDirectory() && !entry.isSymbolicLink()) await scanPackage(path.join(scopeDir, entry.name))
+		}
+	}
+
+	async function scanPackage(packageRoot: string): Promise<void> {
+		try {
+			packages.push(packageFromJson('external', packageRoot, await readPackageJson(packageRoot)))
+		} catch {
+			return
+		}
+		await scan(path.join(packageRoot, 'node_modules'))
+	}
+
+	await scan(nodeModulesDir)
+	return packages
+}
+
+async function findNearestPackageRoot(filePath: string): Promise<string> {
+	let currentDir = path.dirname(filePath)
+	while (true) {
+		try {
+			await readFile(path.join(currentDir, 'package.json'))
+			return currentDir
+		} catch {
+			const parentDir = path.dirname(currentDir)
+			if (parentDir === currentDir) throw new Error(`No package.json found for ${filePath}`)
+			currentDir = parentDir
+		}
+	}
+}
+
+export async function collectPrebuildPackages(moduleRequire: NodeRequire, specifiers: string[]): Promise<ShippedPackage[]> {
+	const packages = new Map<string, ShippedPackage>()
+	for (const specifier of specifiers) {
+		const resolvedPath = await realpath(moduleRequire.resolve(specifier))
+		const packageRoot = await findNearestPackageRoot(resolvedPath)
+		let packageInfo = packages.get(packageRoot)
+		if (!packageInfo) {
+			packageInfo = packageFromJson('prebuild', packageRoot, await readPackageJson(packageRoot))
+			packages.set(packageRoot, packageInfo)
+		}
+		packageInfo.contributingPaths.add(`prebuilds/ (from ${specifier})`)
+	}
+	return [...packages.values()]
 }
 
 export async function collectMetafilePackages(moduleDir: string, metafile: esbuild.Metafile): Promise<ShippedPackage[]> {

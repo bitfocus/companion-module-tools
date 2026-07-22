@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
-import { collectMetafilePackages, normalizeInventoryPath } from '../dist/scripts/lib/license-util.js'
+import {
+	collectInstalledPackages,
+	collectMetafilePackages,
+	collectPrebuildPackages,
+	normalizeInventoryPath,
+} from '../dist/scripts/lib/license-util.js'
 
 async function writeJson(filePath, value) {
 	await mkdir(path.dirname(filePath), { recursive: true })
@@ -35,6 +41,48 @@ async function createProjectFixture() {
 
 test('normalizes paths without leaking package root', () => {
 	assert.equal(normalizeInventoryPath('/repo/node_modules/example/src/index.js', '/repo/node_modules/example'), 'src/index.js')
+})
+
+test('collects installed and prebuild package owners without following symlinks', async (t) => {
+	const projectDir = await createProjectFixture()
+	t.after(() => rm(projectDir, { recursive: true, force: true }))
+	const nodeModulesDir = path.join(projectDir, 'pkg', 'module', 'node_modules')
+
+	for (const [name, version] of [
+		['external-a', '1.0.0'],
+		['transitive-b', '2.0.0'],
+		['nested-c', '3.0.0'],
+	]) {
+		const packageDir =
+			name === 'nested-c' ? path.join(nodeModulesDir, 'external-a', 'node_modules', name) : path.join(nodeModulesDir, name)
+		await writeJson(path.join(packageDir, 'package.json'), { name, version, license: 'MIT' })
+	}
+	await mkdir(path.join(nodeModulesDir, '.bin'), { recursive: true })
+	await symlink(path.join(nodeModulesDir, 'external-a'), path.join(nodeModulesDir, 'linked-external'))
+
+	await writeJson(path.join(projectDir, 'node_modules', 'prebuild-lib', 'package.json'), {
+		name: 'prebuild-lib',
+		version: '4.0.0',
+		license: 'Apache-2.0',
+		main: 'index.js',
+	})
+	await writeFile(path.join(projectDir, 'node_modules', 'prebuild-lib', 'index.js'), 'module.exports = {}')
+
+	const installed = await collectInstalledPackages(nodeModulesDir)
+	assert.deepEqual(
+		installed.map((pkg) => [pkg.name, pkg.version, pkg.kind, [...pkg.contributingPaths]]),
+		[
+			['external-a', '1.0.0', 'external', []],
+			['nested-c', '3.0.0', 'external', []],
+			['transitive-b', '2.0.0', 'external', []],
+		],
+	)
+
+	const moduleRequire = createRequire(path.join(projectDir, 'package.json'))
+	const prebuilds = await collectPrebuildPackages(moduleRequire, ['prebuild-lib/index.js'])
+	assert.deepEqual(prebuilds.map((pkg) => [pkg.name, pkg.kind, [...pkg.contributingPaths]]), [
+		['prebuild-lib', 'prebuild', ['prebuilds/ (from prebuild-lib/index.js)']],
+	])
 })
 
 test('collects only positive-byte JavaScript metafile contributors by package', async (t) => {
