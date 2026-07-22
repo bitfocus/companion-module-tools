@@ -45,7 +45,10 @@ async function createProjectFixture() {
 }
 
 test('normalizes paths without leaking package root', () => {
-	assert.equal(normalizeInventoryPath('/repo/node_modules/example/src/index.js', '/repo/node_modules/example'), 'src/index.js')
+	assert.equal(
+		normalizeInventoryPath('/repo/node_modules/example/src/index.js', '/repo/node_modules/example'),
+		'src/index.js',
+	)
 })
 
 test('collects installed and prebuild package owners without following symlinks', async (t) => {
@@ -95,9 +98,10 @@ test('collects installed and prebuild package owners without following symlinks'
 
 	const moduleRequire = createRequire(path.join(projectDir, 'package.json'))
 	const prebuilds = await collectPrebuildPackages(moduleRequire, ['prebuild-lib', 'prebuild-lib/index.js'])
-	assert.deepEqual(prebuilds.map((pkg) => [pkg.name, pkg.kind, [...pkg.contributingPaths]]), [
-		['prebuild-lib', 'prebuild', ['prebuilds/ (from prebuild-lib)', 'prebuilds/ (from prebuild-lib/index.js)']],
-	])
+	assert.deepEqual(
+		prebuilds.map((pkg) => [pkg.name, pkg.kind, [...pkg.contributingPaths]]),
+		[['prebuild-lib', 'prebuild', ['prebuilds/ (from prebuild-lib)', 'prebuilds/ (from prebuild-lib/index.js)']]],
+	)
 })
 
 test('collects only positive-byte JavaScript metafile contributors by package', async (t) => {
@@ -137,9 +141,27 @@ test('collects only positive-byte JavaScript metafile contributors by package', 
 			contributingPaths: [...pkg.contributingPaths],
 		})),
 		[
-			{ kind: 'project', name: 'project', version: '1.0.0', declaredLicense: 'Apache-2.0', contributingPaths: ['src/main.js'] },
-			{ kind: 'bundled', name: 'plain', version: '2.0.0', declaredLicense: 'BSD-3-Clause', contributingPaths: ['src/index.js'] },
-			{ kind: 'bundled', name: '@scope/nested', version: '3.0.0', declaredLicense: 'ISC', contributingPaths: ['lib/index.js'] },
+			{
+				kind: 'project',
+				name: 'project',
+				version: '1.0.0',
+				declaredLicense: 'Apache-2.0',
+				contributingPaths: ['src/main.js'],
+			},
+			{
+				kind: 'bundled',
+				name: 'plain',
+				version: '2.0.0',
+				declaredLicense: 'BSD-3-Clause',
+				contributingPaths: ['src/index.js'],
+			},
+			{
+				kind: 'bundled',
+				name: '@scope/nested',
+				version: '3.0.0',
+				declaredLicense: 'ISC',
+				contributingPaths: ['lib/index.js'],
+			},
 		],
 	)
 })
@@ -149,7 +171,11 @@ test('attributes symlinked dependencies as dependencies', async (t) => {
 	t.after(() => rm(projectDir, { recursive: true, force: true }))
 	const linkedPackageDir = await mkdtemp(path.join(tmpdir(), 'license-linked-'))
 	t.after(() => rm(linkedPackageDir, { recursive: true, force: true }))
-	await writeJson(path.join(linkedPackageDir, 'package.json'), { name: 'linked-package', version: '1.0.0', license: 'MIT' })
+	await writeJson(path.join(linkedPackageDir, 'package.json'), {
+		name: 'linked-package',
+		version: '1.0.0',
+		license: 'MIT',
+	})
 	await writeFile(path.join(linkedPackageDir, 'index.js'), 'export {}')
 	await symlink(linkedPackageDir, path.join(projectDir, 'node_modules', 'linked-package'), 'dir')
 
@@ -163,21 +189,29 @@ test('attributes symlinked dependencies as dependencies', async (t) => {
 			},
 		},
 	})
-	assert.deepEqual(collection.packages.map((pkg) => [pkg.kind, pkg.name, [...pkg.contributingPaths]]), [
-		['bundled', 'linked-package', ['index.js']],
-	])
+	assert.deepEqual(
+		collection.packages.map((pkg) => [pkg.kind, pkg.name, [...pkg.contributingPaths]]),
+		[['bundled', 'linked-package', ['index.js']]],
+	)
 })
 
 test('collects license and NOTICE material with legal comments as fallback', async (t) => {
 	const packageDir = await mkdtemp(path.join(tmpdir(), 'legal-material-'))
 	t.after(() => rm(packageDir, { recursive: true, force: true }))
-	await writeJson(path.join(packageDir, 'package.json'), { name: 'legal-package', version: '1.0.0', license: 'SEE LICENSE IN docs/CUSTOM.txt' })
+	await writeJson(path.join(packageDir, 'package.json'), {
+		name: 'legal-package',
+		version: '1.0.0',
+		license: 'SEE LICENSE IN docs/CUSTOM.txt',
+	})
 	await writeFile(path.join(packageDir, 'LICENSE.md'), 'license body\n')
 	await writeFile(path.join(packageDir, 'NOTICE.apache'), 'notice body\n')
 	await mkdir(path.join(packageDir, 'docs'), { recursive: true })
 	await writeFile(path.join(packageDir, 'docs', 'CUSTOM.txt'), 'custom license body\n')
 	await mkdir(path.join(packageDir, 'src'), { recursive: true })
-	await writeFile(path.join(packageDir, 'src', 'index.js'), '/*! source legal comment */\n// ordinary comment\nexport {}')
+	await writeFile(
+		path.join(packageDir, 'src', 'index.js'),
+		'/*! source legal comment */\n// ordinary comment\nexport {}',
+	)
 
 	const withLicense = await collectPackageLegalMaterial({
 		kind: 'bundled',
@@ -218,12 +252,27 @@ test('builds one legal inventory from duplicate shipped package records', async 
 	await writeJson(path.join(packageDir, 'package.json'), { name: 'merged-package', version: '1.0.0', license: 'MIT' })
 	await writeFile(path.join(packageDir, 'LICENSE'), 'merged license\n')
 	const inventory = await createLegalInventory([
-		{ kind: 'bundled', name: 'merged-package', version: '1.0.0', declaredLicense: 'MIT', packageRoot: packageDir, contributingPaths: new Set(['src/a.js']) },
-		{ kind: 'prebuild', name: 'merged-package', version: '1.0.0', declaredLicense: 'MIT', packageRoot: packageDir, contributingPaths: new Set(['prebuilds/ (from merged-package)']) },
+		{
+			kind: 'bundled',
+			name: 'merged-package',
+			version: '1.0.0',
+			declaredLicense: 'MIT',
+			packageRoot: packageDir,
+			contributingPaths: new Set(['src/a.js']),
+		},
+		{
+			kind: 'prebuild',
+			name: 'merged-package',
+			version: '1.0.0',
+			declaredLicense: 'MIT',
+			packageRoot: packageDir,
+			contributingPaths: new Set(['prebuilds/ (from merged-package)']),
+		},
 	])
-	assert.deepEqual(inventory.packages.map((pkg) => [pkg.kind, [...pkg.contributingPaths], pkg.legalTexts.length]), [
-		['bundled', ['src/a.js', 'prebuilds/ (from merged-package)'], 1],
-	])
+	assert.deepEqual(
+		inventory.packages.map((pkg) => [pkg.kind, [...pkg.contributingPaths], pkg.legalTexts.length]),
+		[['bundled', ['src/a.js', 'prebuilds/ (from merged-package)'], 1]],
+	)
 })
 
 test('renders deterministic aggregate license and NOTICE artifacts', async (t) => {
@@ -231,12 +280,20 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 		diagnostics: [],
 		packages: [
 			{
-				kind: 'bundled', name: 'z-dependency', version: '2.0.0', declaredLicense: 'MIT', packageRoot: '/secret/z',
+				kind: 'bundled',
+				name: 'z-dependency',
+				version: '2.0.0',
+				declaredLicense: 'MIT',
+				packageRoot: '/secret/z',
 				contributingPaths: new Set(['lib/z.js']),
 				legalTexts: [{ role: 'license', filename: 'LICENSE', content: 'shared license\n', sha256: 'shared' }],
 			},
 			{
-				kind: 'project', name: 'project', version: '1.0.0', declaredLicense: 'Apache-2.0', packageRoot: '/secret/project',
+				kind: 'project',
+				name: 'project',
+				version: '1.0.0',
+				declaredLicense: 'Apache-2.0',
+				packageRoot: '/secret/project',
 				contributingPaths: new Set(['src/main.js']),
 				legalTexts: [
 					{ role: 'license', filename: 'LICENSE', content: 'project license\n', sha256: 'project' },
@@ -244,7 +301,11 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 				],
 			},
 			{
-				kind: 'bundled', name: 'a-dependency', version: '1.0.0', declaredLicense: 'MIT', packageRoot: '/secret/a',
+				kind: 'bundled',
+				name: 'a-dependency',
+				version: '1.0.0',
+				declaredLicense: 'MIT',
+				packageRoot: '/secret/a',
 				contributingPaths: new Set(['index.js']),
 				legalTexts: [{ role: 'license', filename: 'COPYING', content: 'shared license\n', sha256: 'shared' }],
 			},
@@ -264,21 +325,36 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 	await writeLegalArtifacts(outputDir, inventory)
 	assert.equal(await readFile(path.join(outputDir, 'main.js.LICENSE.txt'), 'utf8'), license)
 	assert.match(await readFile(path.join(outputDir, 'main.js.NOTICE.txt'), 'utf8'), /project notice/)
-	await writeLegalArtifacts(outputDir, { ...inventory, packages: inventory.packages.map((pkg) => ({ ...pkg, legalTexts: pkg.legalTexts.filter((text) => text.role !== 'notice') })) })
+	await writeLegalArtifacts(outputDir, {
+		...inventory,
+		packages: inventory.packages.map((pkg) => ({
+			...pkg,
+			legalTexts: pkg.legalTexts.filter((text) => text.role !== 'notice'),
+		})),
+	})
 	await assert.rejects(readFile(path.join(outputDir, 'main.js.NOTICE.txt')))
 })
 
 test('rejects SEE LICENSE IN symlinks escaping package root', async (t) => {
 	const packageDir = await mkdtemp(path.join(tmpdir(), 'legal-symlink-'))
 	const outsideDir = await mkdtemp(path.join(tmpdir(), 'legal-outside-'))
-	t.after(() => Promise.all([rm(packageDir, { recursive: true, force: true }), rm(outsideDir, { recursive: true, force: true })]))
-	await writeJson(path.join(packageDir, 'package.json'), { name: 'symlink-package', license: 'SEE LICENSE IN docs/LEAK' })
+	t.after(() =>
+		Promise.all([rm(packageDir, { recursive: true, force: true }), rm(outsideDir, { recursive: true, force: true })]),
+	)
+	await writeJson(path.join(packageDir, 'package.json'), {
+		name: 'symlink-package',
+		license: 'SEE LICENSE IN docs/LEAK',
+	})
 	await writeFile(path.join(outsideDir, 'LICENSE'), 'outside legal text\n')
 	await mkdir(path.join(packageDir, 'docs'), { recursive: true })
 	await symlink(path.join(outsideDir, 'LICENSE'), path.join(packageDir, 'docs', 'LEAK'))
 
 	const material = await collectPackageLegalMaterial({
-		kind: 'bundled', name: 'symlink-package', packageRoot: packageDir, contributingPaths: new Set(), declaredLicense: 'SEE LICENSE IN docs/LEAK',
+		kind: 'bundled',
+		name: 'symlink-package',
+		packageRoot: packageDir,
+		contributingPaths: new Set(),
+		declaredLicense: 'SEE LICENSE IN docs/LEAK',
 	})
 	assert.deepEqual(material.package.legalTexts, [])
 	assert.deepEqual(material.diagnostics, ['Ignoring unreadable, binary, or oversized legal file: docs/LEAK'])
@@ -303,7 +379,10 @@ test('reports virtual and outside metafile inputs without treating them as proje
 	}
 
 	const collection = await collectMetafilePackages(projectDir, metafile)
-	assert.deepEqual(collection.packages.map((pkg) => [...pkg.contributingPaths]), [['src/main.js']])
+	assert.deepEqual(
+		collection.packages.map((pkg) => [...pkg.contributingPaths]),
+		[['src/main.js']],
+	)
 	assert.deepEqual(collection.diagnostics, [
 		'Ignoring virtual esbuild input: <stdin>',
 		'Ignoring esbuild input outside module directory: ../outside.js',
