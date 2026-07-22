@@ -7,6 +7,7 @@ import test from 'node:test'
 import {
 	collectInstalledPackages,
 	collectMetafilePackages,
+	collectPackageLegalMaterial,
 	collectPrebuildPackages,
 	normalizeInventoryPath,
 } from '../dist/scripts/lib/license-util.js'
@@ -161,6 +162,50 @@ test('attributes symlinked dependencies as dependencies', async (t) => {
 	assert.deepEqual(collection.packages.map((pkg) => [pkg.kind, pkg.name, [...pkg.contributingPaths]]), [
 		['bundled', 'linked-package', ['index.js']],
 	])
+})
+
+test('collects license and NOTICE material with legal comments as fallback', async (t) => {
+	const packageDir = await mkdtemp(path.join(tmpdir(), 'legal-material-'))
+	t.after(() => rm(packageDir, { recursive: true, force: true }))
+	await writeJson(path.join(packageDir, 'package.json'), { name: 'legal-package', version: '1.0.0', license: 'SEE LICENSE IN docs/CUSTOM.txt' })
+	await writeFile(path.join(packageDir, 'LICENSE.md'), 'license body\n')
+	await writeFile(path.join(packageDir, 'NOTICE.apache'), 'notice body\n')
+	await mkdir(path.join(packageDir, 'docs'), { recursive: true })
+	await writeFile(path.join(packageDir, 'docs', 'CUSTOM.txt'), 'custom license body\n')
+	await mkdir(path.join(packageDir, 'src'), { recursive: true })
+	await writeFile(path.join(packageDir, 'src', 'index.js'), '/*! source legal comment */\n// ordinary comment\nexport {}')
+
+	const withLicense = await collectPackageLegalMaterial({
+		kind: 'bundled',
+		name: 'legal-package',
+		version: '1.0.0',
+		declaredLicense: 'SEE LICENSE IN docs/CUSTOM.txt',
+		packageRoot: packageDir,
+		contributingPaths: new Set(['src/index.js']),
+	})
+	assert.deepEqual(
+		withLicense.package.legalTexts.map((text) => [text.role, text.filename, text.content]),
+		[
+			['license', 'docs/CUSTOM.txt', 'custom license body\n'],
+			['license', 'LICENSE.md', 'license body\n'],
+			['notice', 'NOTICE.apache', 'notice body\n'],
+		],
+	)
+
+	await rm(path.join(packageDir, 'LICENSE.md'))
+	await rm(path.join(packageDir, 'docs', 'CUSTOM.txt'))
+	const fallback = await collectPackageLegalMaterial({
+		kind: 'bundled',
+		name: 'legal-package',
+		version: '1.0.0',
+		packageRoot: packageDir,
+		contributingPaths: new Set(['src/index.js']),
+	})
+	assert.equal(fallback.package.legalTexts[0].role, 'notice')
+	assert.equal(fallback.package.legalTexts[1].role, 'source-comment')
+	assert.equal(fallback.package.legalTexts[1].filename, 'src/index.js')
+	assert.match(fallback.package.legalTexts[1].content, /source legal comment/)
+	assert.doesNotMatch(fallback.package.legalTexts[1].content, /ordinary comment/)
 })
 
 test('reports virtual and outside metafile inputs without treating them as project files', async (t) => {
