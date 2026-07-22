@@ -1,4 +1,4 @@
-import { readdir, realpath, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { lstat, readdir, realpath, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import * as esbuild from 'esbuild'
@@ -188,6 +188,8 @@ function legalRole(filename: string): LegalText['role'] | undefined {
 }
 
 async function readLegalText(filePath: string, packageRoot: string, role: LegalText['role']): Promise<LegalText | undefined> {
+	const linkStat = await lstat(filePath)
+	if (linkStat.isSymbolicLink()) return undefined
 	const fileStat = await stat(filePath)
 	if (!fileStat.isFile() || fileStat.size > MAX_LEGAL_FILE_SIZE) return undefined
 	const content = await readFile(filePath, 'utf8')
@@ -265,7 +267,10 @@ export async function collectPackageLegalMaterial(packageInfo: ShippedPackage): 
 	}
 
 	const uniqueTexts = new Map<string, LegalText>()
-	for (const legalText of legalTexts) uniqueTexts.set(`${legalText.role}:${legalText.filename}:${legalText.sha256}`, legalText)
+	for (const legalText of legalTexts) {
+		const key = legalText.role === 'source-comment' ? `${legalText.role}:${legalText.sha256}` : `${legalText.role}:${legalText.filename}:${legalText.sha256}`
+		uniqueTexts.set(key, legalText)
+	}
 	return { package: { ...packageInfo, legalTexts: [...uniqueTexts.values()] }, diagnostics }
 }
 
@@ -304,7 +309,10 @@ function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][], 
 			}
 		}
 		lines.push(`${section.text.role === 'notice' ? 'NOTICE' : section.text.role === 'source-comment' ? 'Source legal comment' : 'Legal file'}: ${section.text.filename}`)
-		lines.push(`----- BEGIN VERBATIM ${section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'} -----`, section.text.content.replace(/\n$/, ''), `----- END VERBATIM ${section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'} -----`)
+		const label = section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'
+		lines.push(
+			`----- BEGIN VERBATIM ${label} -----\n${section.text.content}${section.text.content.endsWith('\n') ? '' : '\n'}----- END VERBATIM ${label} -----`,
+		)
 	}
 	return `${lines.join('\n')}\n`
 }
