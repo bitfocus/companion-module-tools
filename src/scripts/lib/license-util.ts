@@ -13,6 +13,11 @@ export interface ShippedPackage {
 	contributingPaths: Set<string>
 }
 
+export interface MetafilePackageCollection {
+	packages: ShippedPackage[]
+	diagnostics: string[]
+}
+
 type PackageJson = {
 	name?: string
 	version?: string
@@ -143,25 +148,37 @@ export async function collectPrebuildPackages(moduleRequire: NodeRequire, specif
 	return [...packages.values()]
 }
 
-export async function collectMetafilePackages(moduleDir: string, metafile: esbuild.Metafile): Promise<ShippedPackage[]> {
+function isPathInside(childPath: string, parentPath: string): boolean {
+	const relativePath = path.relative(parentPath, childPath)
+	return relativePath === '' || (!relativePath.startsWith(`..${path.sep}`) && relativePath !== '..' && !path.isAbsolute(relativePath))
+}
+
+export async function collectMetafilePackages(
+	moduleDir: string,
+	metafile: esbuild.Metafile,
+): Promise<MetafilePackageCollection> {
 	const resolvedModuleDir = await realpath(moduleDir)
 	const projectPackageJson = await readPackageJson(resolvedModuleDir)
 	const manifestJson = JSON.parse(await readFile(path.join(resolvedModuleDir, 'companion', 'manifest.json'), 'utf8')) as {
 		license?: unknown
 	}
 	const packages = new Map<string, ShippedPackage>()
+	const diagnostics: string[] = []
 
 	for (const input of getContributingInputs(metafile)) {
-		if (input.startsWith('<')) continue
-
-		const resolvedInput = path.resolve(resolvedModuleDir, input)
-		let inputPath: string
-		try {
-			inputPath = await realpath(resolvedInput)
-		} catch {
-			inputPath = resolvedInput
+		if (input.startsWith('<')) {
+			diagnostics.push(`Ignoring virtual esbuild input: ${input}`)
+			continue
 		}
 
+		const inputPath = path.resolve(resolvedModuleDir, input)
+		if (!isPathInside(inputPath, resolvedModuleDir)) {
+			diagnostics.push(`Ignoring esbuild input outside module directory: ${input}`)
+			continue
+		}
+
+		// Resolve ownership using logical node_modules path. Realpath would turn linked
+		// dependencies into paths outside moduleDir and incorrectly classify them as project code.
 		const packageRoot = (await findPackageRoot(inputPath, resolvedModuleDir)) ?? resolvedModuleDir
 		const packageJson = packageRoot === resolvedModuleDir ? projectPackageJson : await readPackageJson(packageRoot)
 		const kind: ShippedPackageKind = packageRoot === resolvedModuleDir ? 'project' : 'bundled'
@@ -190,5 +207,5 @@ export async function collectMetafilePackages(moduleDir: string, metafile: esbui
 		packageInfo.contributingPaths.add(normalizeInventoryPath(inputPath, packageRoot))
 	}
 
-	return [...packages.values()]
+	return { packages: [...packages.values()], diagnostics }
 }
