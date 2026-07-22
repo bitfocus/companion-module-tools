@@ -9,6 +9,7 @@ import {
 	collectMetafilePackages,
 	collectPackageLegalMaterial,
 	collectPrebuildPackages,
+	createLegalInventory,
 	normalizeInventoryPath,
 	renderLicenseFile,
 	renderNoticeFile,
@@ -209,6 +210,20 @@ test('collects license and NOTICE material with legal comments as fallback', asy
 	assert.equal(fallback.package.legalTexts[1].filename, 'src/index.js')
 	assert.match(fallback.package.legalTexts[1].content, /source legal comment/)
 	assert.doesNotMatch(fallback.package.legalTexts[1].content, /ordinary comment/)
+})
+
+test('builds one legal inventory from duplicate shipped package records', async (t) => {
+	const packageDir = await mkdtemp(path.join(tmpdir(), 'legal-inventory-'))
+	t.after(() => rm(packageDir, { recursive: true, force: true }))
+	await writeJson(path.join(packageDir, 'package.json'), { name: 'merged-package', version: '1.0.0', license: 'MIT' })
+	await writeFile(path.join(packageDir, 'LICENSE'), 'merged license\n')
+	const inventory = await createLegalInventory([
+		{ kind: 'bundled', name: 'merged-package', version: '1.0.0', declaredLicense: 'MIT', packageRoot: packageDir, contributingPaths: new Set(['src/a.js']) },
+		{ kind: 'prebuild', name: 'merged-package', version: '1.0.0', declaredLicense: 'MIT', packageRoot: packageDir, contributingPaths: new Set(['prebuilds/ (from merged-package)']) },
+	])
+	assert.deepEqual(inventory.packages.map((pkg) => [pkg.kind, [...pkg.contributingPaths], pkg.legalTexts.length]), [
+		['bundled', ['src/a.js', 'prebuilds/ (from merged-package)'], 1],
+	])
 })
 
 test('renders deterministic aggregate license and NOTICE artifacts', async (t) => {

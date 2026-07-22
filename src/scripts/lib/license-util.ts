@@ -325,6 +325,38 @@ export async function writeLegalArtifacts(outputDir: string, inventory: LegalInv
 	else await rm(noticePath, { force: true })
 }
 
+const kindPriority: Record<ShippedPackageKind, number> = {
+	project: 0,
+	bundled: 1,
+	external: 2,
+	prebuild: 3,
+}
+
+export async function createLegalInventory(packages: ShippedPackage[]): Promise<LegalInventory> {
+	const mergedPackages = new Map<string, ShippedPackage>()
+	for (const packageInfo of packages) {
+		const existing = mergedPackages.get(packageInfo.packageRoot)
+		if (!existing) {
+			mergedPackages.set(packageInfo.packageRoot, {
+				...packageInfo,
+				contributingPaths: new Set(packageInfo.contributingPaths),
+			})
+			continue
+		}
+		for (const sourcePath of packageInfo.contributingPaths) existing.contributingPaths.add(sourcePath)
+		if (kindPriority[packageInfo.kind] < kindPriority[existing.kind]) existing.kind = packageInfo.kind
+	}
+
+	const diagnostics: string[] = []
+	const legalRecords: ShippedPackageLegalRecord[] = []
+	for (const packageInfo of mergedPackages.values()) {
+		const material = await collectPackageLegalMaterial(packageInfo)
+		legalRecords.push(material.package)
+		diagnostics.push(...material.diagnostics)
+	}
+	return { packages: legalRecords, diagnostics }
+}
+
 export async function collectMetafilePackages(
 	moduleDir: string,
 	metafile: esbuild.Metafile,
