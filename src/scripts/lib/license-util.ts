@@ -1,4 +1,4 @@
-import { readdir, realpath, readFile, stat } from 'node:fs/promises'
+import { readdir, realpath, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import * as esbuild from 'esbuild'
@@ -32,6 +32,11 @@ export interface ShippedPackageLegalRecord extends ShippedPackage {
 
 export interface PackageLegalMaterial {
 	package: ShippedPackageLegalRecord
+	diagnostics: string[]
+}
+
+export interface LegalInventory {
+	packages: ShippedPackageLegalRecord[]
 	diagnostics: string[]
 }
 
@@ -262,6 +267,62 @@ export async function collectPackageLegalMaterial(packageInfo: ShippedPackage): 
 	const uniqueTexts = new Map<string, LegalText>()
 	for (const legalText of legalTexts) uniqueTexts.set(`${legalText.role}:${legalText.filename}:${legalText.sha256}`, legalText)
 	return { package: { ...packageInfo, legalTexts: [...uniqueTexts.values()] }, diagnostics }
+}
+
+function comparePackages(a: ShippedPackageLegalRecord, b: ShippedPackageLegalRecord): number {
+	if (a.kind === 'project' && b.kind !== 'project') return -1
+	if (a.kind !== 'project' && b.kind === 'project') return 1
+	return a.name.localeCompare(b.name) || (a.version ?? '').localeCompare(b.version ?? '')
+}
+
+function packageName(packageInfo: ShippedPackageLegalRecord): string {
+	return packageInfo.version ? `${packageInfo.name}@${packageInfo.version}` : packageInfo.name
+}
+
+function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][], title: string): string | undefined {
+	const groupedTexts = new Map<string, { text: LegalText; packages: ShippedPackageLegalRecord[] }>()
+	for (const packageInfo of inventory.packages) {
+		for (const text of packageInfo.legalTexts) {
+			if (!roles.includes(text.role)) continue
+			const key = `${text.role}:${text.sha256}`
+			const group = groupedTexts.get(key) ?? { text, packages: [] }
+			group.packages.push(packageInfo)
+			groupedTexts.set(key, group)
+		}
+	}
+	if (!groupedTexts.size) return undefined
+
+	const sections = [...groupedTexts.values()].sort((a, b) => comparePackages(a.packages.sort(comparePackages)[0], b.packages.sort(comparePackages)[0]))
+	const lines = [title, '='.repeat(title.length)]
+	for (const section of sections) {
+		const packages = section.packages.sort(comparePackages)
+		lines.push('', 'Applies to:', ...packages.map((packageInfo) => `  - ${packageName(packageInfo)}`))
+		for (const packageInfo of packages) {
+			lines.push(`Package: ${packageName(packageInfo)}`, `Declared license: ${packageInfo.declaredLicense ?? 'UNKNOWN'}`)
+			if (packageInfo.contributingPaths.size) {
+				lines.push('Source paths:', ...[...packageInfo.contributingPaths].sort().map((sourcePath) => `  - ${sourcePath}`))
+			}
+		}
+		lines.push(`${section.text.role === 'notice' ? 'NOTICE' : section.text.role === 'source-comment' ? 'Source legal comment' : 'Legal file'}: ${section.text.filename}`)
+		lines.push(`----- BEGIN VERBATIM ${section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'} -----`, section.text.content.replace(/\n$/, ''), `----- END VERBATIM ${section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'} -----`)
+	}
+	return `${lines.join('\n')}\n`
+}
+
+export function renderLicenseFile(inventory: LegalInventory): string {
+	return renderLegalFile(inventory, ['license', 'source-comment'], 'Bundled Licenses for main.js') ?? 'Bundled Licenses for main.js\n============================\n'
+}
+
+export function renderNoticeFile(inventory: LegalInventory): string | undefined {
+	return renderLegalFile(inventory, ['notice'], 'Bundled Notices for main.js')
+}
+
+export async function writeLegalArtifacts(outputDir: string, inventory: LegalInventory): Promise<void> {
+	await writeFile(path.join(outputDir, 'main.js.LICENSE.txt'), renderLicenseFile(inventory))
+	const notice = renderNoticeFile(inventory)
+	const noticePath = path.join(outputDir, 'main.js.NOTICE.txt')
+	if (notice) await writeFile(noticePath, notice)
+	else await rm(noticePath, { force: true })
 }
 
 export async function collectMetafilePackages(

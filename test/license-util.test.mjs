@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -10,6 +10,9 @@ import {
 	collectPackageLegalMaterial,
 	collectPrebuildPackages,
 	normalizeInventoryPath,
+	renderLicenseFile,
+	renderNoticeFile,
+	writeLegalArtifacts,
 } from '../dist/scripts/lib/license-util.js'
 
 async function writeJson(filePath, value) {
@@ -206,6 +209,48 @@ test('collects license and NOTICE material with legal comments as fallback', asy
 	assert.equal(fallback.package.legalTexts[1].filename, 'src/index.js')
 	assert.match(fallback.package.legalTexts[1].content, /source legal comment/)
 	assert.doesNotMatch(fallback.package.legalTexts[1].content, /ordinary comment/)
+})
+
+test('renders deterministic aggregate license and NOTICE artifacts', async (t) => {
+	const inventory = {
+		diagnostics: [],
+		packages: [
+			{
+				kind: 'bundled', name: 'z-dependency', version: '2.0.0', declaredLicense: 'MIT', packageRoot: '/secret/z',
+				contributingPaths: new Set(['lib/z.js']),
+				legalTexts: [{ role: 'license', filename: 'LICENSE', content: 'shared license\n', sha256: 'shared' }],
+			},
+			{
+				kind: 'project', name: 'project', version: '1.0.0', declaredLicense: 'Apache-2.0', packageRoot: '/secret/project',
+				contributingPaths: new Set(['src/main.js']),
+				legalTexts: [
+					{ role: 'license', filename: 'LICENSE', content: 'project license\n', sha256: 'project' },
+					{ role: 'notice', filename: 'NOTICE', content: 'project notice\n', sha256: 'notice' },
+				],
+			},
+			{
+				kind: 'bundled', name: 'a-dependency', version: '1.0.0', declaredLicense: 'MIT', packageRoot: '/secret/a',
+				contributingPaths: new Set(['index.js']),
+				legalTexts: [{ role: 'license', filename: 'COPYING', content: 'shared license\n', sha256: 'shared' }],
+			},
+		],
+	}
+	const license = renderLicenseFile(inventory)
+	assert.match(license, /^Bundled Licenses for main\.js/m)
+	assert.ok(license.indexOf('Package: project@1.0.0') < license.indexOf('Package: a-dependency@1.0.0'))
+	assert.match(license, /Applies to:\n  - a-dependency@1\.0\.0\n  - z-dependency@2\.0\.0/)
+	assert.equal((license.match(/shared license/g) ?? []).length, 1)
+	assert.doesNotMatch(license, /\/secret/)
+	assert.ok(license.endsWith('\n'))
+	assert.match(renderNoticeFile(inventory), /project notice\n/)
+
+	const outputDir = await mkdtemp(path.join(tmpdir(), 'legal-artifacts-'))
+	t.after(() => rm(outputDir, { recursive: true, force: true }))
+	await writeLegalArtifacts(outputDir, inventory)
+	assert.equal(await readFile(path.join(outputDir, 'main.js.LICENSE.txt'), 'utf8'), license)
+	assert.match(await readFile(path.join(outputDir, 'main.js.NOTICE.txt'), 'utf8'), /project notice/)
+	await writeLegalArtifacts(outputDir, { ...inventory, packages: inventory.packages.map((pkg) => ({ ...pkg, legalTexts: pkg.legalTexts.filter((text) => text.role !== 'notice') })) })
+	await assert.rejects(readFile(path.join(outputDir, 'main.js.NOTICE.txt')))
 })
 
 test('reports virtual and outside metafile inputs without treating them as project files', async (t) => {
