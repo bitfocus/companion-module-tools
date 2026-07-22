@@ -155,7 +155,10 @@ async function findNearestPackageRoot(filePath: string): Promise<string> {
 	}
 }
 
-export async function collectPrebuildPackages(moduleRequire: NodeRequire, specifiers: string[]): Promise<ShippedPackage[]> {
+export async function collectPrebuildPackages(
+	moduleRequire: NodeRequire,
+	specifiers: string[],
+): Promise<ShippedPackage[]> {
 	const packages = new Map<string, ShippedPackage>()
 	for (const specifier of specifiers) {
 		const resolvedPath = await realpath(moduleRequire.resolve(specifier))
@@ -178,7 +181,10 @@ function sha256(content: string): string {
 
 function isPathInside(childPath: string, parentPath: string): boolean {
 	const relativePath = path.relative(parentPath, childPath)
-	return relativePath === '' || (!relativePath.startsWith(`..${path.sep}`) && relativePath !== '..' && !path.isAbsolute(relativePath))
+	return (
+		relativePath === '' ||
+		(!relativePath.startsWith(`..${path.sep}`) && relativePath !== '..' && !path.isAbsolute(relativePath))
+	)
 }
 
 function legalRole(filename: string): LegalText['role'] | undefined {
@@ -187,7 +193,11 @@ function legalRole(filename: string): LegalText['role'] | undefined {
 	return undefined
 }
 
-async function readLegalText(filePath: string, packageRoot: string, role: LegalText['role']): Promise<LegalText | undefined> {
+async function readLegalText(
+	filePath: string,
+	packageRoot: string,
+	role: LegalText['role'],
+): Promise<LegalText | undefined> {
 	const linkStat = await lstat(filePath)
 	if (linkStat.isSymbolicLink()) return undefined
 	const fileStat = await stat(filePath)
@@ -268,7 +278,10 @@ export async function collectPackageLegalMaterial(packageInfo: ShippedPackage): 
 
 	const uniqueTexts = new Map<string, LegalText>()
 	for (const legalText of legalTexts) {
-		const key = legalText.role === 'source-comment' ? `${legalText.role}:${legalText.sha256}` : `${legalText.role}:${legalText.filename}:${legalText.sha256}`
+		const key =
+			legalText.role === 'source-comment'
+				? `${legalText.role}:${legalText.sha256}`
+				: `${legalText.role}:${legalText.filename}:${legalText.sha256}`
 		uniqueTexts.set(key, legalText)
 	}
 	return { package: { ...packageInfo, legalTexts: [...uniqueTexts.values()] }, diagnostics }
@@ -297,18 +310,28 @@ function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][], 
 	}
 	if (!groupedTexts.size) return undefined
 
-	const sections = [...groupedTexts.values()].sort((a, b) => comparePackages(a.packages.sort(comparePackages)[0], b.packages.sort(comparePackages)[0]))
+	const sections = [...groupedTexts.values()].sort((a, b) =>
+		comparePackages(a.packages.sort(comparePackages)[0], b.packages.sort(comparePackages)[0]),
+	)
 	const lines = [title, '='.repeat(title.length)]
 	for (const section of sections) {
 		const packages = section.packages.sort(comparePackages)
 		lines.push('', 'Applies to:', ...packages.map((packageInfo) => `  - ${packageName(packageInfo)}`))
 		for (const packageInfo of packages) {
-			lines.push(`Package: ${packageName(packageInfo)}`, `Declared license: ${packageInfo.declaredLicense ?? 'UNKNOWN'}`)
+			lines.push(
+				`Package: ${packageName(packageInfo)}`,
+				`Declared license: ${packageInfo.declaredLicense ?? 'UNKNOWN'}`,
+			)
 			if (packageInfo.contributingPaths.size) {
-				lines.push('Source paths:', ...[...packageInfo.contributingPaths].sort().map((sourcePath) => `  - ${sourcePath}`))
+				lines.push(
+					'Source paths:',
+					...[...packageInfo.contributingPaths].sort().map((sourcePath) => `  - ${sourcePath}`),
+				)
 			}
 		}
-		lines.push(`${section.text.role === 'notice' ? 'NOTICE' : section.text.role === 'source-comment' ? 'Source legal comment' : 'Legal file'}: ${section.text.filename}`)
+		lines.push(
+			`${section.text.role === 'notice' ? 'NOTICE' : section.text.role === 'source-comment' ? 'Source legal comment' : 'Legal file'}: ${section.text.filename}`,
+		)
 		const label = section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'
 		lines.push(
 			`----- BEGIN VERBATIM ${label} -----\n${section.text.content}${section.text.content.endsWith('\n') ? '' : '\n'}----- END VERBATIM ${label} -----`,
@@ -318,7 +341,10 @@ function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][], 
 }
 
 export function renderLicenseFile(inventory: LegalInventory): string {
-	return renderLegalFile(inventory, ['license', 'source-comment'], 'Bundled Licenses for main.js') ?? 'Bundled Licenses for main.js\n============================\n'
+	return (
+		renderLegalFile(inventory, ['license', 'source-comment'], 'Bundled Licenses for main.js') ??
+		'Bundled Licenses for main.js\n============================\n'
+	)
 }
 
 export function renderNoticeFile(inventory: LegalInventory): string | undefined {
@@ -371,7 +397,9 @@ export async function collectMetafilePackages(
 ): Promise<MetafilePackageCollection> {
 	const resolvedModuleDir = await realpath(moduleDir)
 	const projectPackageJson = await readPackageJson(resolvedModuleDir)
-	const manifestJson = JSON.parse(await readFile(path.join(resolvedModuleDir, 'companion', 'manifest.json'), 'utf8')) as {
+	const manifestJson = JSON.parse(
+		await readFile(path.join(resolvedModuleDir, 'companion', 'manifest.json'), 'utf8'),
+	) as {
 		license?: unknown
 	}
 	const packages = new Map<string, ShippedPackage>()
