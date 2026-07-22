@@ -268,6 +268,22 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 	await assert.rejects(readFile(path.join(outputDir, 'main.js.NOTICE.txt')))
 })
 
+test('rejects SEE LICENSE IN symlinks escaping package root', async (t) => {
+	const packageDir = await mkdtemp(path.join(tmpdir(), 'legal-symlink-'))
+	const outsideDir = await mkdtemp(path.join(tmpdir(), 'legal-outside-'))
+	t.after(() => Promise.all([rm(packageDir, { recursive: true, force: true }), rm(outsideDir, { recursive: true, force: true })]))
+	await writeJson(path.join(packageDir, 'package.json'), { name: 'symlink-package', license: 'SEE LICENSE IN docs/LEAK' })
+	await writeFile(path.join(outsideDir, 'LICENSE'), 'outside legal text\n')
+	await mkdir(path.join(packageDir, 'docs'), { recursive: true })
+	await symlink(path.join(outsideDir, 'LICENSE'), path.join(packageDir, 'docs', 'LEAK'))
+
+	const material = await collectPackageLegalMaterial({
+		kind: 'bundled', name: 'symlink-package', packageRoot: packageDir, contributingPaths: new Set(), declaredLicense: 'SEE LICENSE IN docs/LEAK',
+	})
+	assert.deepEqual(material.package.legalTexts, [])
+	assert.deepEqual(material.diagnostics, ['Ignoring unreadable, binary, or oversized legal file: docs/LEAK'])
+})
+
 test('reports virtual and outside metafile inputs without treating them as project files', async (t) => {
 	const projectDir = await createProjectFixture()
 	t.after(() => rm(projectDir, { recursive: true, force: true }))
