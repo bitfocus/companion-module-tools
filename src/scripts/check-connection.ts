@@ -2,8 +2,9 @@
 // The zx shebang doesn't resolve dependencies correctly
 import 'zx/globals'
 
-import path from 'path'
-import { findModuleDir, readUTF8File } from './lib/build-util.js'
+import { createRequire } from 'node:module'
+import { findModuleDir } from './lib/build-util.js'
+import { checkPackage } from './lib/check-util.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
@@ -13,18 +14,16 @@ const { validateManifest } = await import('@companion-module/base/manifest').cat
 	throw new Error(`Failed to load @companion-module/base. Have you installed a compatible version?: ${e?.message ?? e}`)
 })
 
-// const toolsDir = path.join(__dirname, '..')
-const toolsDir = await findModuleDir(import.meta.resolve('@companion-module/tools'))
-const frameworkDir = await findModuleDir(import.meta.resolve('@companion-module/base'))
+const require = createRequire(import.meta.url)
+const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
+const frameworkDir = await findModuleDir(require.resolve('@companion-module/base'))
 console.log(`Checking for: ${process.cwd()}`)
 
 console.log(`Tools path: ${toolsDir}`)
 console.log(`Framework path: ${frameworkDir}`)
 
-const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
-
 try {
-	validateManifest(manifestJson, false)
+	await checkPackage({ moduleType: 'connection', validateManifest })
 } catch (e) {
 	console.error('Manifest validation failed', e)
 	process.exit(1)
