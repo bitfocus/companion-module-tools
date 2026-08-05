@@ -1,7 +1,10 @@
 import { lstat, readdir, realpath, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import * as esbuild from 'esbuild'
+import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
+import { resolveExternalDependencies, withInstalledExternalTree } from './external-install-util.js'
 
 export type ShippedPackageKind = 'project' | 'bundled' | 'external'
 
@@ -349,6 +352,35 @@ export async function createLegalInventory(packages: ShippedPackage[]): Promise<
 		diagnostics.push(...material.diagnostics)
 	}
 	return { packages: legalRecords, diagnostics }
+}
+
+export async function analyzeShippedLegalInventory(moduleDir: string): Promise<LegalInventory> {
+	const definition = await loadModuleBuildDefinition(moduleDir)
+	const result = await esbuild.build(
+		createEsbuildOptions(definition, {
+			outdir: path.join(moduleDir, '.license-analysis'),
+			write: false,
+			minify: false,
+			sourcemap: false,
+		}),
+	)
+	if (!result.metafile) throw new Error('esbuild did not produce a metafile')
+	const metafilePackages = await collectMetafilePackages(moduleDir, result.metafile)
+	const packages = [...metafilePackages.packages]
+	if (definition.externals.length) {
+		const dependencies = await resolveExternalDependencies(moduleDir, definition.externals)
+		packages.push(...(await withInstalledExternalTree(dependencies, collectInstalledPackages)))
+	}
+	if (definition.buildConfig.prebuilds) {
+		packages.push(
+			...(await collectPrebuildPackages(
+				createRequire(path.join(moduleDir, 'package.json')),
+				definition.buildConfig.prebuilds,
+			)),
+		)
+	}
+	const inventory = await createLegalInventory(packages)
+	return { ...inventory, diagnostics: [...metafilePackages.diagnostics, ...inventory.diagnostics] }
 }
 
 export async function collectMetafilePackages(
