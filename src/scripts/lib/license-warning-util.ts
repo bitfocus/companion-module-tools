@@ -100,8 +100,8 @@ export function createLicenseWarnings(inventory: LegalInventory, moduleType: Mod
 		const restriction =
 			moduleType === 'connection'
 				? project
-					? `This module is licensed under ${packageInfo.declaredLicense}, which makes it unavailable in Bitfocus Buttons.`
-					: `Dependency ${packageInfo.name}${packageInfo.version ? `@${packageInfo.version}` : ''} is licensed under ${packageInfo.declaredLicense}, which makes this module unavailable in Bitfocus Buttons.`
+					? `This module is licensed under ${packageInfo.declaredLicense}, which might be fine for Companion, but makes it unavailable in Bitfocus Buttons.`
+					: `Dependency ${packageInfo.name}${packageInfo.version ? `@${packageInfo.version}` : ''} is licensed under ${packageInfo.declaredLicense}, which might be fine for Companion, but makes this module unavailable in Bitfocus Buttons.`
 				: project
 					? `This surface is licensed under ${packageInfo.declaredLicense}, which may restrict distribution or use.`
 					: `Dependency ${packageInfo.name}${packageInfo.version ? `@${packageInfo.version}` : ''} is licensed under ${packageInfo.declaredLicense}, which may restrict this surface's distribution or use.`
