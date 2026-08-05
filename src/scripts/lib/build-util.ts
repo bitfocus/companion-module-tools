@@ -7,13 +7,13 @@ import * as tar from 'tar'
 import { createRequire } from 'module'
 import * as semver from 'semver'
 import * as esbuild from 'esbuild'
-import type { ModuleBuildConfig } from '../../build-config.js'
 import {
 	collectInstalledPackages,
 	collectMetafilePackages,
 	createLegalInventory,
 	writeLegalArtifacts,
 } from './license-util.js'
+import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 
 function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
@@ -87,53 +87,17 @@ export async function buildPackage<M>(
 
 	const isDev = !!(argv.dev || argv.debug)
 
-	// Load optional build config from the module directory
-	let buildConfig: ModuleBuildConfig = {}
-	const buildConfigPath = path.resolve('build-config.cjs')
-	if (fs.existsSync(buildConfigPath)) {
-		buildConfig = require(buildConfigPath)
-		console.log('Found additional build configuration')
-	}
-
-	// Flatten externals to a string array for esbuild
-	const externalsRaw: string[] = Array.isArray(buildConfig.externals)
-		? buildConfig.externals
-		: buildConfig.externals
-			? [buildConfig.externals]
-			: []
-
-	// Build entry points map
-	const entryPoints: Record<string, string> = {
-		main: './' + srcPackageJson.main,
-		...buildConfig.additionalEntrypoints,
-	}
+	const buildDefinition = await loadModuleBuildDefinition(moduleDir)
+	const buildConfig = buildDefinition.buildConfig
+	if (fs.existsSync(path.join(moduleDir, 'build-config.cjs'))) console.log('Found additional build configuration')
+	const externalsRaw = buildDefinition.externals
 
 	// build the code
-	const esbuildOptions: esbuild.BuildOptions = {
-		entryPoints,
+	const esbuildOptions = createEsbuildOptions(buildDefinition, {
 		outdir: path.resolve(moduleDir, packageBaseDir),
-		bundle: true,
-		platform: 'node',
-		format: 'esm',
 		minify: isDev ? false : !buildConfig.disableMinifier,
 		sourcemap: isDev ? 'inline' : false,
-		target: 'node22',
-		external: externalsRaw,
-		metafile: true,
-		// When bundling to ESM, `require`, `__dirname`, and `__filename` are not defined.
-		// Many CJS transitive dependencies call require() for Node built-ins (e.g. `require('events')`).
-		// Inject a small header that recreates them with ESM-native APIs so they work at runtime.
-		banner: {
-			js: [
-				`import { createRequire as __esbuild_createRequire } from 'module';`,
-				`import { fileURLToPath as __esbuild_fileURLToPath } from 'url';`,
-				`import { dirname as __esbuild_dirname } from 'path';`,
-				`const require = __esbuild_createRequire(import.meta.url);`,
-				`const __filename = __esbuild_fileURLToPath(import.meta.url);`,
-				`const __dirname = __esbuild_dirname(__filename);`,
-			].join('\n'),
-		},
-	}
+	})
 
 	const buildResult = await esbuild.build(esbuildOptions)
 	if (!buildResult.metafile) throw new Error('esbuild did not produce a metafile')
