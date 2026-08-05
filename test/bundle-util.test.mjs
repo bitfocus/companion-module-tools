@@ -30,6 +30,14 @@ test('shares entrypoints and externals for build and analysis', async (t) => {
 	assert.deepEqual(options.external, definition.externals)
 })
 
+test('does not hide missing imports from an existing build config', async (t) => {
+	const moduleDir = await mkdtemp(path.join(tmpdir(), 'bundle-config-error-'))
+	t.after(() => rm(moduleDir, { recursive: true, force: true }))
+	await writeFile(path.join(moduleDir, 'package.json'), JSON.stringify({ main: 'src/main.js' }))
+	await writeFile(path.join(moduleDir, 'build-config.cjs'), "module.exports = require('./missing-helper.cjs')")
+	await assert.rejects(loadModuleBuildDefinition(moduleDir), /missing-helper/)
+})
+
 test('analyzes only bundled shipped packages without writing output', async (t) => {
 	const moduleDir = await mkdtemp(path.join(tmpdir(), 'bundle-analysis-'))
 	t.after(() => rm(moduleDir, { recursive: true, force: true }))
