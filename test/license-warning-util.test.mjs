@@ -1,6 +1,73 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { classifyLicenseExpression } from '../dist/scripts/lib/license-warning-util.js'
+import {
+	classifyLicenseExpression,
+	createLicenseWarnings,
+	formatLicenseWarning,
+	printLicenseWarnings,
+} from '../dist/scripts/lib/license-warning-util.js'
+
+const inventory = {
+	diagnostics: [],
+	packages: [
+		{
+			kind: 'project',
+			name: 'project',
+			version: '1.0.0',
+			declaredLicense: 'MIT AND AGPL-3.0-only',
+			packageRoot: '',
+			contributingPaths: new Set(),
+			legalTexts: [],
+		},
+		{
+			kind: 'bundled',
+			name: 'non-commercial-dep',
+			version: '2.0.0',
+			declaredLicense: 'CC-BY-NC-4.0',
+			packageRoot: '',
+			contributingPaths: new Set(),
+			legalTexts: [],
+		},
+	],
+}
+
+test('renders module and surface restricted-license warnings', () => {
+	const moduleWarnings = createLicenseWarnings(inventory, 'connection')
+	assert.equal(moduleWarnings.length, 3)
+	assert.match(
+		moduleWarnings[0].text,
+		/^WARNING: This module is licensed under MIT AND AGPL-3.0-only, which makes it unavailable in Bitfocus Buttons\./,
+	)
+	assert.match(
+		moduleWarnings[0].text,
+		/Some commercial users of Companion might be limited by this module when it is used over the network\./,
+	)
+	assert.match(
+		moduleWarnings[1].text,
+		/^LICENSE AMBIGUITY: The warning above is shown because MIT AND AGPL-3.0-only combines AGPLv3\/SSPL obligations using AND;/,
+	)
+	assert.match(
+		moduleWarnings[2].text,
+		/^WARNING: Dependency non-commercial-dep@2.0.0 is licensed under CC-BY-NC-4.0, which makes this module unavailable in Bitfocus Buttons\./,
+	)
+	assert.doesNotMatch(moduleWarnings[2].text, /network/)
+
+	const surfaceWarnings = createLicenseWarnings(inventory, 'surface')
+	assert.doesNotMatch(surfaceWarnings.map((warning) => warning.text).join('\n'), /Buttons/)
+	assert.match(surfaceWarnings[0].text, /this surface when it is used over the network/)
+	assert.match(surfaceWarnings[2].text, /may restrict this surface's distribution or use/)
+})
+
+test('formats warnings for TTY and writes plain redirected output', () => {
+	const [restricted, ambiguity] = createLicenseWarnings(inventory, 'connection')
+	assert.match(formatLicenseWarning(restricted, true), /^\u001b\[38;5;208mWARNING:/)
+	assert.match(formatLicenseWarning(ambiguity, true), /^\u001b\[33mLICENSE AMBIGUITY:/)
+	assert.ok(formatLicenseWarning(restricted, true).endsWith('\u001b[0m'))
+	assert.doesNotMatch(formatLicenseWarning(restricted, false), /\u001b\[/)
+	const writes = []
+	printLicenseWarnings([restricted], { isTTY: false, write: (text) => writes.push(text) })
+	assert.deepEqual(writes, [`${restricted.text}\n`])
+})
 
 for (const [expression, restricted, families, agplOrSsplAndAmbiguity] of [
 	['MIT', false, [], false],

@@ -1,4 +1,5 @@
 import parse = require('spdx-expression-parse')
+import type { LegalInventory } from './license-util.js'
 
 export type RestrictedFamily = 'non-commercial' | 'network-copyleft'
 
@@ -7,6 +8,13 @@ export interface LicensePolicyResult {
 	families: Set<RestrictedFamily>
 	agplOrSsplAndAmbiguity: boolean
 	parsed: boolean
+}
+
+export type ModuleType = 'connection' | 'surface'
+
+export interface LicenseWarning {
+	severity: 'restricted' | 'ambiguity'
+	text: string
 }
 
 type Evaluation = Omit<LicensePolicyResult, 'parsed'>
@@ -68,4 +76,53 @@ export function classifyLicenseExpression(expression: string | undefined): Licen
 	} catch {
 		return { restricted: false, families: new Set(), agplOrSsplAndAmbiguity: false, parsed: false }
 	}
+}
+
+function packageSort(a: LegalInventory['packages'][number], b: LegalInventory['packages'][number]): number {
+	if (a.kind === 'project' && b.kind !== 'project') return -1
+	if (a.kind !== 'project' && b.kind === 'project') return 1
+	return a.name.localeCompare(b.name) || (a.version ?? '').localeCompare(b.version ?? '')
+}
+
+export function createLicenseWarnings(inventory: LegalInventory, moduleType: ModuleType): LicenseWarning[] {
+	const warnings: LicenseWarning[] = []
+	for (const packageInfo of [...inventory.packages].sort(packageSort)) {
+		const policy = classifyLicenseExpression(packageInfo.declaredLicense)
+		if (!policy.restricted || !packageInfo.declaredLicense) continue
+
+		const subject = moduleType === 'connection' ? 'module' : 'surface'
+		const project = packageInfo.kind === 'project'
+		const restriction =
+			moduleType === 'connection'
+				? project
+					? `This module is licensed under ${packageInfo.declaredLicense}, which makes it unavailable in Bitfocus Buttons.`
+					: `Dependency ${packageInfo.name}${packageInfo.version ? `@${packageInfo.version}` : ''} is licensed under ${packageInfo.declaredLicense}, which makes this module unavailable in Bitfocus Buttons.`
+				: project
+					? `This surface is licensed under ${packageInfo.declaredLicense}, which may restrict distribution or use.`
+					: `Dependency ${packageInfo.name}${packageInfo.version ? `@${packageInfo.version}` : ''} is licensed under ${packageInfo.declaredLicense}, which may restrict this surface's distribution or use.`
+		const networkWarning = policy.families.has('network-copyleft')
+			? ` Some commercial users of Companion might be limited by this ${subject} when it is used over the network.`
+			: ''
+		warnings.push({ severity: 'restricted', text: `WARNING: ${restriction}${networkWarning}` })
+		if (policy.agplOrSsplAndAmbiguity) {
+			warnings.push({
+				severity: 'ambiguity',
+				text: `LICENSE AMBIGUITY: The warning above is shown because ${packageInfo.declaredLicense} combines AGPLv3/SSPL obligations using AND; confirm the intended licensing terms.`,
+			})
+		}
+	}
+	return warnings
+}
+
+export function formatLicenseWarning(warning: LicenseWarning, isTTY: boolean): string {
+	if (!isTTY) return warning.text
+	const color = warning.severity === 'restricted' ? '\u001b[38;5;208m' : '\u001b[33m'
+	return `${color}${warning.text}\u001b[0m`
+}
+
+export function printLicenseWarnings(
+	warnings: LicenseWarning[],
+	stderr: Pick<NodeJS.WriteStream, 'write' | 'isTTY'> = process.stderr,
+): void {
+	for (const warning of warnings) stderr.write(`${formatLicenseWarning(warning, Boolean(stderr.isTTY))}\n`)
 }
