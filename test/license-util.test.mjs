@@ -323,8 +323,8 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 	const outputDir = await mkdtemp(path.join(tmpdir(), 'legal-artifacts-'))
 	t.after(() => rm(outputDir, { recursive: true, force: true }))
 	await writeLegalArtifacts(outputDir, inventory)
-	assert.equal(await readFile(path.join(outputDir, 'main.js.LICENSE.txt'), 'utf8'), license)
-	assert.match(await readFile(path.join(outputDir, 'main.js.NOTICE.txt'), 'utf8'), /project notice/)
+	assert.equal(await readFile(path.join(outputDir, 'LICENSE'), 'utf8'), license)
+	assert.match(await readFile(path.join(outputDir, 'NOTICE'), 'utf8'), /project notice/)
 	await writeLegalArtifacts(outputDir, {
 		...inventory,
 		packages: inventory.packages.map((pkg) => ({
@@ -332,7 +332,7 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 			legalTexts: pkg.legalTexts.filter((text) => text.role !== 'notice'),
 		})),
 	})
-	await assert.rejects(readFile(path.join(outputDir, 'main.js.NOTICE.txt')))
+	await assert.rejects(readFile(path.join(outputDir, 'NOTICE')))
 })
 
 test('rejects SEE LICENSE IN symlinks escaping package root', async (t) => {
