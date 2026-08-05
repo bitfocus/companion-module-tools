@@ -108,7 +108,13 @@ export function createLicenseWarnings(inventory: LegalInventory, moduleType: Mod
 		const networkWarning = policy.families.has('network-copyleft')
 			? ` Some commercial users of Companion might be limited by this ${subject} when it is used over the network.`
 			: ''
-		warnings.push({ severity: 'restricted', text: `WARNING: ${restriction}${networkWarning}` })
+		const commercialUseWarning = policy.families.has('non-commercial')
+			? ` Review license terms before publishing or using this ${subject} commercially.`
+			: ''
+		warnings.push({
+			severity: 'restricted',
+			text: `WARNING: ${restriction}${networkWarning}${commercialUseWarning}`,
+		})
 		if (policy.agplOrSsplAndAmbiguity) {
 			warnings.push({
 				severity: 'ambiguity',
