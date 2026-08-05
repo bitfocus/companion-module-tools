@@ -87,7 +87,11 @@ function packageSort(a: LegalInventory['packages'][number], b: LegalInventory['p
 
 export function createLicenseWarnings(inventory: LegalInventory, moduleType: ModuleType): LicenseWarning[] {
 	const warnings: LicenseWarning[] = []
+	const warnedIdentities = new Set<string>()
 	for (const packageInfo of [...inventory.packages].sort(packageSort)) {
+		const identity = `${packageInfo.kind === 'project' ? 'project' : 'dependency'}:${packageInfo.name}@${packageInfo.version ?? ''}:${packageInfo.declaredLicense ?? ''}`
+		if (warnedIdentities.has(identity)) continue
+		warnedIdentities.add(identity)
 		const policy = classifyLicenseExpression(packageInfo.declaredLicense)
 		if (!policy.restricted || !packageInfo.declaredLicense) continue
 
