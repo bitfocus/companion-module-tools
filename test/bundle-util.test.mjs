@@ -41,12 +41,19 @@ test('analyzes only bundled shipped packages without writing output', async (t) 
 	await writeFile(path.join(moduleDir, 'companion', 'manifest.json'), JSON.stringify({ license: 'AGPL-3.0-only' }))
 	await mkdir(path.join(moduleDir, 'src'), { recursive: true })
 	await writeFile(path.join(moduleDir, 'src', 'main.js'), "import { used } from 'used-package'; console.log(used)")
+	await writeFile(path.join(moduleDir, 'build-config.cjs'), "module.exports = { prebuilds: ['pruned-native'] }")
 	await mkdir(path.join(moduleDir, 'node_modules', 'used-package'), { recursive: true })
 	await writeFile(
 		path.join(moduleDir, 'node_modules', 'used-package', 'package.json'),
 		JSON.stringify({ name: 'used-package', version: '1.0.0', license: 'MIT', main: 'index.js' }),
 	)
 	await writeFile(path.join(moduleDir, 'node_modules', 'used-package', 'index.js'), 'export const used = true')
+	await mkdir(path.join(moduleDir, 'node_modules', 'pruned-native', 'prebuilds', 'android-arm64'), { recursive: true })
+	await writeFile(
+		path.join(moduleDir, 'node_modules', 'pruned-native', 'package.json'),
+		JSON.stringify({ name: 'pruned-native', version: '1.0.0', license: 'AGPL-3.0-only', main: 'index.js' }),
+	)
+	await writeFile(path.join(moduleDir, 'node_modules', 'pruned-native', 'index.js'), 'module.exports = {}')
 	await mkdir(path.join(moduleDir, 'node_modules', 'unused-package'), { recursive: true })
 	await writeFile(
 		path.join(moduleDir, 'node_modules', 'unused-package', 'package.json'),

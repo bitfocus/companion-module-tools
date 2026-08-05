@@ -23,7 +23,8 @@ type ExpressionNode = parse.Info
 function normalizeExpression(expression: string): string {
 	return expression
 		.replace(/Server Side Public License/gi, 'SSPL-1.0')
-		.replace(/Non-Commercial|NonCommercial/gi, 'LicenseRef-NonCommercial')
+		.replace(/\bSSPL\b(?!-1\.0)/gi, 'SSPL-1.0')
+		.replace(/Non-Commercial|NonCommercial|CC-NC/gi, 'LicenseRef-NonCommercial')
 		.replace(/AGPLv3/gi, 'AGPL-3.0-only')
 }
 
