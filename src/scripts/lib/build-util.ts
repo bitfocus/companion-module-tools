@@ -15,6 +15,8 @@ import {
 } from './license-util.js'
 import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies } from './external-install-util.js'
+import { createLicenseWarnings, printLicenseWarnings, type ModuleType } from './license-warning-util.js'
+import type { LegalInventory } from './license-util.js'
 
 function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
@@ -37,7 +39,13 @@ export async function findModuleDir(cwd: string) {
 	return path.dirname(pkgJsonPath)
 }
 
-type ModuleType = 'connection' | 'surface'
+export function warnForLegalInventory(
+	inventory: LegalInventory,
+	moduleType: ModuleType,
+	stderr?: Pick<NodeJS.WriteStream, 'write' | 'isTTY'>,
+): void {
+	printLicenseWarnings(createLicenseWarnings(inventory, moduleType), stderr)
+}
 
 export async function buildPackage<M>(
 	frameworkPackageName: string,
@@ -230,6 +238,7 @@ export async function buildPackage<M>(
 		console.warn(`License inventory: ${diagnostic}`)
 	}
 	await writeLegalArtifacts(packageBaseDir, legalInventory)
+	warnForLegalInventory(legalInventory, moduleType)
 
 	// Create tgz of the build
 	let tgzFile = toSanitizedDirname(`${manifestJson.id}-${manifestJson.version}`)
