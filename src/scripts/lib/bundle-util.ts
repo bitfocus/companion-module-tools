@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -22,11 +23,7 @@ export async function loadModuleBuildDefinition(moduleDir: string): Promise<Modu
 
 	let buildConfig: ModuleBuildConfig = {}
 	const buildConfigPath = path.join(moduleDir, 'build-config.cjs')
-	try {
-		buildConfig = moduleRequire(buildConfigPath) as ModuleBuildConfig
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error
-	}
+	if (existsSync(buildConfigPath)) buildConfig = moduleRequire(buildConfigPath) as ModuleBuildConfig
 	const externals = Array.isArray(buildConfig.externals)
 		? buildConfig.externals
 		: buildConfig.externals
