@@ -352,9 +352,9 @@ export function renderNoticeFile(inventory: LegalInventory): string | undefined 
 }
 
 export async function writeLegalArtifacts(outputDir: string, inventory: LegalInventory): Promise<void> {
-	await writeFile(path.join(outputDir, 'main.js.LICENSE.txt'), renderLicenseFile(inventory))
+	await writeFile(path.join(outputDir, 'LICENSE'), renderLicenseFile(inventory))
 	const notice = renderNoticeFile(inventory)
-	const noticePath = path.join(outputDir, 'main.js.NOTICE.txt')
+	const noticePath = path.join(outputDir, 'NOTICE')
 	if (notice) await writeFile(noticePath, notice)
 	else await rm(noticePath, { force: true })
 }
