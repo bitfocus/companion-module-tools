@@ -14,6 +14,7 @@ import {
 	writeLegalArtifacts,
 } from './license-util.js'
 import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
+import { resolveExternalDependencies } from './external-install-util.js'
 
 function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
@@ -148,15 +149,7 @@ export async function buildPackage<M>(
 
 	// Ensure that any externals are added as dependencies
 	if (externalsRaw.length) {
-		// Add any external dependencies with versions matching what is currently installed.
-		// Externals are plain package-name strings when using esbuild.
-		for (const external of externalsRaw) {
-			const extPath = await findUp('package.json', { cwd: moduleRequire.resolve(external) })
-			if (extPath) {
-				const extJson = JSON.parse(await readUTF8File(extPath))
-				packageJson.dependencies[extJson.name] = extJson.version
-			}
-		}
+		Object.assign(packageJson.dependencies, await resolveExternalDependencies(moduleDir, externalsRaw))
 
 		// Ensure node-gyp is excluded from the installed deps in the output package
 		packageJson.resolutions = {

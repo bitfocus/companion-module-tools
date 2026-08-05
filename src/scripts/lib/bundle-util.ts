@@ -46,6 +46,7 @@ export function createEsbuildOptions(
 	overrides: Pick<esbuild.BuildOptions, 'outdir' | 'write' | 'minify' | 'sourcemap'>,
 ): esbuild.BuildOptions {
 	return {
+		absWorkingDir: definition.moduleDir,
 		entryPoints: definition.entryPoints,
 		bundle: true,
 		platform: 'node',
