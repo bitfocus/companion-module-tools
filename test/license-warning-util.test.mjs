@@ -45,11 +45,11 @@ test('renders module and surface restricted-license warnings', () => {
 	assert.equal(moduleWarnings.length, 3)
 	assert.match(
 		moduleWarnings[0].text,
-		/^WARNING: This module is licensed under MIT AND AGPL-3.0-only, which might be fine for Companion, but makes it unavailable in Bitfocus Buttons\./,
+		/^WARNING: This module is licensed under MIT AND AGPL-3.0-only, which might be fine for Bitfocus Companion, but makes it unavailable in Bitfocus Buttons\./,
 	)
 	assert.match(
 		moduleWarnings[0].text,
-		/Some commercial users of Companion might be limited by this module when it is used over the network\./,
+		/Some commercial users of Bitfocus Companion might be limited by this module when it is used over the network\./,
 	)
 	assert.match(
 		moduleWarnings[1].text,
@@ -57,7 +57,7 @@ test('renders module and surface restricted-license warnings', () => {
 	)
 	assert.match(
 		moduleWarnings[2].text,
-		/^WARNING: Dependency non-commercial-dep@2.0.0 is licensed under CC-BY-NC-4.0, which might be fine for Companion, but makes this module unavailable in Bitfocus Buttons\./,
+		/^WARNING: Dependency non-commercial-dep@2.0.0 is licensed under CC-BY-NC-4.0, which might be fine for Bitfocus Companion, but makes this module unavailable in Bitfocus Buttons\./,
 	)
 	assert.doesNotMatch(moduleWarnings[2].text, /network/)
 	assert.match(moduleWarnings[2].text, /Review license terms before publishing or using this module commercially\./)
