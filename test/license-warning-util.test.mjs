@@ -60,11 +60,13 @@ test('renders module and surface restricted-license warnings', () => {
 		/^WARNING: Dependency non-commercial-dep@2.0.0 is licensed under CC-BY-NC-4.0, which makes this module unavailable in Bitfocus Buttons\./,
 	)
 	assert.doesNotMatch(moduleWarnings[2].text, /network/)
+	assert.match(moduleWarnings[2].text, /Review license terms before publishing or using this module commercially\./)
 
 	const surfaceWarnings = createLicenseWarnings(inventory, 'surface')
 	assert.doesNotMatch(surfaceWarnings.map((warning) => warning.text).join('\n'), /Buttons/)
 	assert.match(surfaceWarnings[0].text, /this surface when it is used over the network/)
 	assert.match(surfaceWarnings[2].text, /may restrict this surface's distribution or use/)
+	assert.match(surfaceWarnings[2].text, /Review license terms before publishing or using this surface commercially\./)
 })
 
 test('formats warnings for TTY and writes plain redirected output', () => {
