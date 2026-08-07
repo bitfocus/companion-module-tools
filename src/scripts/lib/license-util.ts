@@ -175,6 +175,10 @@ export async function collectPrebuildPackages(
 
 const MAX_LEGAL_FILE_SIZE = 1024 * 1024
 
+export function normalizeLegalText(content: string): string {
+	return content.replace(/\r\n/g, '\n').trim()
+}
+
 function sha256(content: string): string {
 	return createHash('sha256').update(content).digest('hex')
 }
@@ -202,8 +206,10 @@ async function readLegalText(
 	if (linkStat.isSymbolicLink()) return undefined
 	const fileStat = await stat(filePath)
 	if (!fileStat.isFile() || fileStat.size > MAX_LEGAL_FILE_SIZE) return undefined
-	const content = await readFile(filePath, 'utf8')
-	if (content.includes('\0')) return undefined
+	const rawContent = await readFile(filePath, 'utf8')
+	if (rawContent.includes('\0')) return undefined
+	const content = normalizeLegalText(rawContent)
+	if (!content) return undefined
 	return { role, filename: normalizeInventoryPath(filePath, packageRoot), content, sha256: sha256(content) }
 }
 
@@ -263,12 +269,15 @@ export async function collectPackageLegalMaterial(packageInfo: ShippedPackage): 
 				const source = await readFile(path.join(packageInfo.packageRoot, sourcePath), 'utf8')
 				const result = await esbuild.transform(source, { loader, legalComments: 'external' })
 				if (result.legalComments) {
-					legalTexts.push({
-						role: 'source-comment',
-						filename: sourcePath,
-						content: result.legalComments,
-						sha256: sha256(result.legalComments),
-					})
+					const content = normalizeLegalText(result.legalComments)
+					if (content) {
+						legalTexts.push({
+							role: 'source-comment',
+							filename: sourcePath,
+							content,
+							sha256: sha256(content),
+						})
+					}
 				}
 			} catch {
 				diagnostics.push(`Ignoring unreadable source file for legal comments: ${sourcePath}`)

@@ -11,6 +11,7 @@ import {
 	collectPrebuildPackages,
 	createLegalInventory,
 	normalizeInventoryPath,
+	normalizeLegalText,
 	renderLicenseFile,
 	renderNoticeFile,
 	writeLegalArtifacts,
@@ -49,6 +50,39 @@ test('normalizes paths without leaking package root', () => {
 		normalizeInventoryPath('/repo/node_modules/example/src/index.js', '/repo/node_modules/example'),
 		'src/index.js',
 	)
+})
+
+test('normalizes legal text before hashing and rendering', async (t) => {
+	assert.equal(normalizeLegalText('\r\n  MIT text\r\n\r\n'), 'MIT text')
+	assert.equal(normalizeLegalText('\tline one\r\n\r\nline two  '), 'line one\n\nline two')
+	assert.equal(normalizeLegalText('line one\n  indented line\nline three'), 'line one\n  indented line\nline three')
+
+	const firstDir = await mkdtemp(path.join(tmpdir(), 'legal-normalize-a-'))
+	const secondDir = await mkdtemp(path.join(tmpdir(), 'legal-normalize-b-'))
+	t.after(() =>
+		Promise.all([rm(firstDir, { recursive: true, force: true }), rm(secondDir, { recursive: true, force: true })]),
+	)
+	for (const [packageDir, body] of [
+		[firstDir, '\r\n shared text \r\n'],
+		[secondDir, 'shared text\n'],
+	]) {
+		await writeJson(path.join(packageDir, 'package.json'), { name: path.basename(packageDir), license: 'MIT' })
+		await writeFile(path.join(packageDir, 'LICENSE'), body)
+	}
+	const first = await collectPackageLegalMaterial({
+		kind: 'bundled',
+		name: 'a',
+		packageRoot: firstDir,
+		contributingPaths: new Set(),
+	})
+	const second = await collectPackageLegalMaterial({
+		kind: 'bundled',
+		name: 'b',
+		packageRoot: secondDir,
+		contributingPaths: new Set(),
+	})
+	assert.equal(first.package.legalTexts[0].content, 'shared text')
+	assert.equal(first.package.legalTexts[0].sha256, second.package.legalTexts[0].sha256)
 })
 
 test('collects installed and prebuild package owners without following symlinks', async (t) => {
@@ -224,9 +258,9 @@ test('collects license and NOTICE material with legal comments as fallback', asy
 	assert.deepEqual(
 		withLicense.package.legalTexts.map((text) => [text.role, text.filename, text.content]),
 		[
-			['license', 'docs/CUSTOM.txt', 'custom license body\n'],
-			['license', 'LICENSE.md', 'license body\n'],
-			['notice', 'NOTICE.apache', 'notice body\n'],
+			['license', 'docs/CUSTOM.txt', 'custom license body'],
+			['license', 'LICENSE.md', 'license body'],
+			['notice', 'NOTICE.apache', 'notice body'],
 		],
 	)
 
