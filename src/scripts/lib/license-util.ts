@@ -306,7 +306,7 @@ function packageName(packageInfo: ShippedPackageLegalRecord): string {
 	return packageInfo.version ? `${packageInfo.name}@${packageInfo.version}` : packageInfo.name
 }
 
-function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][], title: string): string | undefined {
+function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][]): string | undefined {
 	const groupedTexts = new Map<string, { text: LegalText; packages: ShippedPackageLegalRecord[] }>()
 	for (const packageInfo of inventory.packages) {
 		for (const text of packageInfo.legalTexts) {
@@ -322,42 +322,23 @@ function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][], 
 	const sections = [...groupedTexts.values()].sort((a, b) =>
 		comparePackages(a.packages.sort(comparePackages)[0], b.packages.sort(comparePackages)[0]),
 	)
-	const lines = [title, '='.repeat(title.length)]
-	for (const section of sections) {
+	const separator = '-'.repeat(80)
+	const renderedSections = sections.map((section) => {
 		const packages = section.packages.sort(comparePackages)
-		lines.push('', 'Applies to:', ...packages.map((packageInfo) => `  - ${packageName(packageInfo)}`))
-		for (const packageInfo of packages) {
-			lines.push(
-				`Package: ${packageName(packageInfo)}`,
-				`Declared license: ${packageInfo.declaredLicense ?? 'UNKNOWN'}`,
-			)
-			if (packageInfo.contributingPaths.size) {
-				lines.push(
-					'Source paths:',
-					...[...packageInfo.contributingPaths].sort().map((sourcePath) => `  - ${sourcePath}`),
-				)
-			}
-		}
-		lines.push(
-			`${section.text.role === 'notice' ? 'NOTICE' : section.text.role === 'source-comment' ? 'Source legal comment' : 'Legal file'}: ${section.text.filename}`,
-		)
-		const label = section.text.role === 'notice' ? 'NOTICE' : 'LICENSE'
-		lines.push(
-			`----- BEGIN VERBATIM ${label} -----\n${section.text.content}${section.text.content.endsWith('\n') ? '' : '\n'}----- END VERBATIM ${label} -----`,
-		)
-	}
-	return `${lines.join('\n')}\n`
+		const packageList = packages
+			.map((packageInfo) => `${packageName(packageInfo)} — ${packageInfo.declaredLicense ?? 'UNKNOWN'}`)
+			.join(', ')
+		return `Packages: ${packageList}\n${separator}\n${normalizeLegalText(section.text.content)}`
+	})
+	return `${renderedSections.join('\n\n')}\n`
 }
 
 export function renderLicenseFile(inventory: LegalInventory): string {
-	return (
-		renderLegalFile(inventory, ['license', 'source-comment'], 'Bundled Licenses for main.js') ??
-		'Bundled Licenses for main.js\n============================\n'
-	)
+	return renderLegalFile(inventory, ['license', 'source-comment']) ?? ''
 }
 
 export function renderNoticeFile(inventory: LegalInventory): string | undefined {
-	return renderLegalFile(inventory, ['notice'], 'Bundled Notices for main.js')
+	return renderLegalFile(inventory, ['notice'])
 }
 
 export async function writeLegalArtifacts(outputDir: string, inventory: LegalInventory): Promise<void> {

@@ -345,14 +345,16 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 			},
 		],
 	}
+	const separator = '-'.repeat(80)
 	const license = renderLicenseFile(inventory)
-	assert.match(license, /^Bundled Licenses for main\.js/m)
-	assert.ok(license.indexOf('Package: project@1.0.0') < license.indexOf('Package: a-dependency@1.0.0'))
-	assert.match(license, /Applies to:\n  - a-dependency@1\.0\.0\n  - z-dependency@2\.0\.0/)
-	assert.equal((license.match(/shared license/g) ?? []).length, 1)
-	assert.doesNotMatch(license, /\/secret/)
-	assert.ok(license.endsWith('\n'))
-	assert.match(renderNoticeFile(inventory), /project notice\n/)
+	assert.equal(
+		license,
+		`Packages: project@1.0.0 — Apache-2.0\n${separator}\nproject license\n\nPackages: a-dependency@1.0.0 — MIT, z-dependency@2.0.0 — MIT\n${separator}\nshared license\n`,
+	)
+	assert.equal(renderNoticeFile(inventory), `Packages: project@1.0.0 — Apache-2.0\n${separator}\nproject notice\n`)
+	assert.doesNotMatch(license, /Source|Applies to|Package:|BEGIN|END|\/secret/)
+	assert.equal(renderLicenseFile({ packages: [], diagnostics: [] }), '')
+	assert.equal(renderNoticeFile({ packages: [], diagnostics: [] }), undefined)
 
 	const outputDir = await mkdtemp(path.join(tmpdir(), 'legal-artifacts-'))
 	t.after(() => rm(outputDir, { recursive: true, force: true }))
