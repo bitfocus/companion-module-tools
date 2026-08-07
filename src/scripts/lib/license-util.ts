@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import * as esbuild from 'esbuild'
 
-export type ShippedPackageKind = 'project' | 'bundled' | 'external' | 'prebuild'
+export type ShippedPackageKind = 'project' | 'bundled' | 'external'
 
 export interface ShippedPackage {
 	kind: ShippedPackageKind
@@ -139,38 +139,6 @@ export async function collectInstalledPackages(nodeModulesDir: string): Promise<
 
 	await scan(nodeModulesDir)
 	return packages
-}
-
-async function findNearestPackageRoot(filePath: string): Promise<string> {
-	let currentDir = path.dirname(filePath)
-	while (true) {
-		try {
-			await readFile(path.join(currentDir, 'package.json'))
-			return currentDir
-		} catch {
-			const parentDir = path.dirname(currentDir)
-			if (parentDir === currentDir) throw new Error(`No package.json found for ${filePath}`)
-			currentDir = parentDir
-		}
-	}
-}
-
-export async function collectPrebuildPackages(
-	moduleRequire: NodeRequire,
-	specifiers: string[],
-): Promise<ShippedPackage[]> {
-	const packages = new Map<string, ShippedPackage>()
-	for (const specifier of specifiers) {
-		const resolvedPath = await realpath(moduleRequire.resolve(specifier))
-		const packageRoot = await findNearestPackageRoot(resolvedPath)
-		let packageInfo = packages.get(packageRoot)
-		if (!packageInfo) {
-			packageInfo = packageFromJson('prebuild', packageRoot, await readPackageJson(packageRoot))
-			packages.set(packageRoot, packageInfo)
-		}
-		packageInfo.contributingPaths.add(`prebuilds/ (from ${specifier})`)
-	}
-	return [...packages.values()]
 }
 
 const MAX_LEGAL_FILE_SIZE = 1024 * 1024
@@ -353,7 +321,6 @@ const kindPriority: Record<ShippedPackageKind, number> = {
 	project: 0,
 	bundled: 1,
 	external: 2,
-	prebuild: 3,
 }
 
 export async function createLegalInventory(packages: ShippedPackage[]): Promise<LegalInventory> {

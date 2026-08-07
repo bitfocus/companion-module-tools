@@ -11,7 +11,6 @@ import type { ModuleBuildConfig } from '../../build-config.js'
 import {
 	collectInstalledPackages,
 	collectMetafilePackages,
-	collectPrebuildPackages,
 	createLegalInventory,
 	writeLegalArtifacts,
 } from './license-util.js'
@@ -201,7 +200,6 @@ export async function buildPackage<M>(
 		}
 	}
 
-	const prebuildOutputPaths = new Map<string, string[]>()
 	// Copy across any prebuilds that can be loaded correctly
 	if (buildConfig.prebuilds) {
 		await fs.mkdir(path.join(packageBaseDir, 'prebuilds'))
@@ -209,13 +207,9 @@ export async function buildPackage<M>(
 		for (const lib of buildConfig.prebuilds) {
 			const srcDir = await findModuleDir(moduleRequire.resolve(lib))
 			const filesOrDirs = await fs.readdir(path.join(srcDir, 'prebuilds'))
-			const outputPaths: string[] = []
 			for (const fileOrDir of filesOrDirs) {
-				const outputPath = path.join(packageBaseDir, 'prebuilds', fileOrDir)
-				await fs.copy(path.join(srcDir, 'prebuilds', fileOrDir), outputPath)
-				outputPaths.push(outputPath)
+				await fs.copy(path.join(srcDir, 'prebuilds', fileOrDir), path.join(packageBaseDir, 'prebuilds', fileOrDir))
 			}
-			prebuildOutputPaths.set(lib, outputPaths)
 		}
 	}
 
@@ -273,12 +267,6 @@ export async function buildPackage<M>(
 	const shippedPackages = [...metafilePackages.packages]
 	if (Object.keys(packageJson.dependencies).length) {
 		shippedPackages.push(...(await collectInstalledPackages(path.join(packageBaseDir, 'node_modules'))))
-	}
-	if (buildConfig.prebuilds) {
-		const shippedPrebuilds = buildConfig.prebuilds.filter((lib) =>
-			(prebuildOutputPaths.get(lib) ?? []).some((outputPath) => fs.existsSync(outputPath)),
-		)
-		shippedPackages.push(...(await collectPrebuildPackages(moduleRequire, shippedPrebuilds)))
 	}
 	const legalInventory = await createLegalInventory(shippedPackages)
 	for (const diagnostic of [...metafilePackages.diagnostics, ...legalInventory.diagnostics]) {

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -8,7 +7,6 @@ import {
 	collectInstalledPackages,
 	collectMetafilePackages,
 	collectPackageLegalMaterial,
-	collectPrebuildPackages,
 	createLegalInventory,
 	normalizeInventoryPath,
 	normalizeLegalText,
@@ -35,6 +33,8 @@ async function createProjectFixture() {
 	})
 	await mkdir(path.join(projectDir, 'node_modules', 'plain', 'src'), { recursive: true })
 	await writeFile(path.join(projectDir, 'node_modules', 'plain', 'src', 'index.js'), 'export {}')
+	await mkdir(path.join(projectDir, 'node_modules', 'plain', 'prebuilds', 'linux-x64'), { recursive: true })
+	await writeFile(path.join(projectDir, 'node_modules', 'plain', 'prebuilds', 'linux-x64', 'addon.node'), '')
 	await writeJson(path.join(projectDir, 'node_modules', '@scope', 'nested', 'package.json'), {
 		name: '@scope/nested',
 		version: '3.0.0',
@@ -85,7 +85,7 @@ test('normalizes legal text before hashing and rendering', async (t) => {
 	assert.equal(first.package.legalTexts[0].sha256, second.package.legalTexts[0].sha256)
 })
 
-test('collects installed and prebuild package owners without following symlinks', async (t) => {
+test('collects installed package owners without following symlinks', async (t) => {
 	const projectDir = await createProjectFixture()
 	t.after(() => rm(projectDir, { recursive: true, force: true }))
 	const nodeModulesDir = path.join(projectDir, 'pkg', 'module', 'node_modules')
@@ -111,14 +111,6 @@ test('collects installed and prebuild package owners without following symlinks'
 	await writeJson(path.join(outsideDir, 'package.json'), { name: 'outside-link', version: '1.0.0' })
 	await symlink(outsideDir, path.join(nodeModulesDir, 'outside-link'), 'dir')
 
-	await writeJson(path.join(projectDir, 'node_modules', 'prebuild-lib', 'package.json'), {
-		name: 'prebuild-lib',
-		version: '4.0.0',
-		license: 'Apache-2.0',
-		main: 'index.js',
-	})
-	await writeFile(path.join(projectDir, 'node_modules', 'prebuild-lib', 'index.js'), 'module.exports = {}')
-
 	const installed = await collectInstalledPackages(nodeModulesDir)
 	assert.deepEqual(
 		installed.map((pkg) => [pkg.name, pkg.version, pkg.kind, [...pkg.contributingPaths]]),
@@ -128,13 +120,6 @@ test('collects installed and prebuild package owners without following symlinks'
 			['nested-c', '3.0.0', 'external', []],
 			['transitive-b', '2.0.0', 'external', []],
 		],
-	)
-
-	const moduleRequire = createRequire(path.join(projectDir, 'package.json'))
-	const prebuilds = await collectPrebuildPackages(moduleRequire, ['prebuild-lib', 'prebuild-lib/index.js'])
-	assert.deepEqual(
-		prebuilds.map((pkg) => [pkg.name, pkg.kind, [...pkg.contributingPaths]]),
-		[['prebuild-lib', 'prebuild', ['prebuilds/ (from prebuild-lib)', 'prebuilds/ (from prebuild-lib/index.js)']]],
 	)
 })
 
@@ -295,17 +280,17 @@ test('builds one legal inventory from duplicate shipped package records', async 
 			contributingPaths: new Set(['src/a.js']),
 		},
 		{
-			kind: 'prebuild',
+			kind: 'external',
 			name: 'merged-package',
 			version: '1.0.0',
 			declaredLicense: 'MIT',
 			packageRoot: packageDir,
-			contributingPaths: new Set(['prebuilds/ (from merged-package)']),
+			contributingPaths: new Set(),
 		},
 	])
 	assert.deepEqual(
 		inventory.packages.map((pkg) => [pkg.kind, [...pkg.contributingPaths], pkg.legalTexts.length]),
-		[['bundled', ['src/a.js', 'prebuilds/ (from merged-package)'], 1]],
+		[['bundled', ['src/a.js'], 1]],
 	)
 })
 
