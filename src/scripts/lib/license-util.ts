@@ -275,24 +275,27 @@ function packageName(packageInfo: ShippedPackageLegalRecord): string {
 }
 
 function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][]): string | undefined {
-	const groupedTexts = new Map<string, { text: LegalText; packages: ShippedPackageLegalRecord[] }>()
+	const groupedTexts = new Map<string, { text: LegalText; packages: Map<string, ShippedPackageLegalRecord> }>()
 	for (const packageInfo of inventory.packages) {
 		for (const text of packageInfo.legalTexts) {
 			if (!roles.includes(text.role)) continue
-			const key = `${text.role}:${text.sha256}`
-			const group = groupedTexts.get(key) ?? { text, packages: [] }
-			group.packages.push(packageInfo)
-			groupedTexts.set(key, group)
+			const group = groupedTexts.get(text.sha256) ?? { text, packages: new Map() }
+			const packageKey = `${packageInfo.kind === 'project' ? 'project' : 'dependency'}:${packageName(packageInfo)}:${packageInfo.declaredLicense ?? ''}`
+			group.packages.set(packageKey, packageInfo)
+			groupedTexts.set(text.sha256, group)
 		}
 	}
 	if (!groupedTexts.size) return undefined
 
 	const sections = [...groupedTexts.values()].sort((a, b) =>
-		comparePackages(a.packages.sort(comparePackages)[0], b.packages.sort(comparePackages)[0]),
+		comparePackages(
+			[...a.packages.values()].sort(comparePackages)[0],
+			[...b.packages.values()].sort(comparePackages)[0],
+		),
 	)
 	const separator = '-'.repeat(80)
 	const renderedSections = sections.map((section) => {
-		const packages = section.packages.sort(comparePackages)
+		const packages = [...section.packages.values()].sort(comparePackages)
 		const packageList = packages
 			.map((packageInfo) => `${packageName(packageInfo)} — ${packageInfo.declaredLicense ?? 'UNKNOWN'}`)
 			.join(', ')

@@ -326,7 +326,10 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 				declaredLicense: 'MIT',
 				packageRoot: '/secret/a',
 				contributingPaths: new Set(['index.js']),
-				legalTexts: [{ role: 'license', filename: 'COPYING', content: 'shared license\n', sha256: 'shared' }],
+				legalTexts: [
+					{ role: 'license', filename: 'COPYING', content: 'shared license\n', sha256: 'shared' },
+					{ role: 'source-comment', filename: 'index.js', content: 'shared license\n', sha256: 'shared' },
+				],
 			},
 		],
 	}
