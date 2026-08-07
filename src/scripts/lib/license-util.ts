@@ -1,9 +1,8 @@
 import { lstat, readdir, realpath, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import * as esbuild from 'esbuild'
-import { createEsbuildOptions, isSupportedPrebuildDir, loadModuleBuildDefinition } from './bundle-util.js'
+import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies, withInstalledExternalTree } from './external-install-util.js'
 
 export type ShippedPackageKind = 'project' | 'bundled' | 'external'
@@ -370,16 +369,6 @@ export async function analyzeShippedLegalInventory(moduleDir: string): Promise<L
 	if (definition.externals.length) {
 		const dependencies = await resolveExternalDependencies(moduleDir, definition.externals)
 		packages.push(...(await withInstalledExternalTree(dependencies, collectInstalledPackages)))
-	}
-	if (definition.buildConfig.prebuilds) {
-		const prebuildPackages = await collectPrebuildPackages(
-			createRequire(path.join(moduleDir, 'package.json')),
-			definition.buildConfig.prebuilds,
-		)
-		for (const packageInfo of prebuildPackages) {
-			const dirs = await readdir(path.join(packageInfo.packageRoot, 'prebuilds'))
-			if (dirs.some(isSupportedPrebuildDir)) packages.push(packageInfo)
-		}
 	}
 	const inventory = await createLegalInventory(packages)
 	return { ...inventory, diagnostics: [...metafilePackages.diagnostics, ...inventory.diagnostics] }
