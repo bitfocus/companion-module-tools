@@ -38,15 +38,6 @@ export async function loadModuleBuildDefinition(moduleDir: string): Promise<Modu
 	}
 }
 
-export function isSupportedPrebuildDir(dirname: string): boolean {
-	return !(
-		/freebsd|android/.test(dirname) ||
-		/win32-ia32/.test(dirname) ||
-		/linux(.+)musl/.test(dirname) ||
-		/linux-arm$|linux-arm-gnueabihf/.test(dirname)
-	)
-}
-
 export function createEsbuildOptions(
 	definition: ModuleBuildDefinition,
 	overrides: Pick<esbuild.BuildOptions, 'outdir' | 'write' | 'minify' | 'sourcemap'>,

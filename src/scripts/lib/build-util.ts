@@ -13,7 +13,7 @@ import {
 	createLegalInventory,
 	writeLegalArtifacts,
 } from './license-util.js'
-import { createEsbuildOptions, isSupportedPrebuildDir, loadModuleBuildDefinition } from './bundle-util.js'
+import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies } from './external-install-util.js'
 import { createLicenseWarnings, printLicenseWarnings, type ModuleType } from './license-warning-util.js'
 import type { LegalInventory } from './license-util.js'
@@ -207,7 +207,22 @@ export async function buildPackage<M>(
 	if (fs.existsSync(prebuildDirName)) {
 		const prebuildDirs = await fs.readdir(prebuildDirName)
 		for (const dir of prebuildDirs) {
-			if (!isSupportedPrebuildDir(dir)) {
+			let keepDir = true
+			if (dir.match(/freebsd/) || dir.match(/android/)) {
+				// Unsupported platforms
+				keepDir = false
+			} else if (dir.match(/win32-ia32/)) {
+				// 32bit windows is not supported
+				keepDir = false
+			} else if (dir.match(/linux(.+)musl/)) {
+				// linux musl is not supported
+				keepDir = false
+			} else if (dir.match(/linux-arm$/) || dir.match(/linux-arm-gnueabihf/)) {
+				// linux arm (non arm64) is not supported
+				keepDir = false
+			}
+
+			if (!keepDir) {
 				console.log('Removing unneeded prebuild dir:', dir)
 				await fs.rm(path.join(prebuildDirName, dir), { recursive: true, force: true })
 			}
