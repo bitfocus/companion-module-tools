@@ -8,6 +8,12 @@ import { createRequire } from 'module'
 import * as semver from 'semver'
 import * as esbuild from 'esbuild'
 import type { ModuleBuildConfig } from '../../build-config.js'
+import {
+	collectInstalledPackages,
+	collectMetafilePackages,
+	createLegalInventory,
+	writeLegalArtifacts,
+} from './license-util.js'
 
 function toSanitizedDirname(name: string) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
@@ -113,6 +119,7 @@ export async function buildPackage<M>(
 		sourcemap: isDev ? 'inline' : false,
 		target: 'node22',
 		external: externalsRaw,
+		metafile: true,
 		// When bundling to ESM, `require`, `__dirname`, and `__filename` are not defined.
 		// Many CJS transitive dependencies call require() for Node built-ins (e.g. `require('events')`).
 		// Inject a small header that recreates them with ESM-native APIs so they work at runtime.
@@ -128,7 +135,9 @@ export async function buildPackage<M>(
 		},
 	}
 
-	await esbuild.build(esbuildOptions)
+	const buildResult = await esbuild.build(esbuildOptions)
+	if (!buildResult.metafile) throw new Error('esbuild did not produce a metafile')
+	const metafilePackages = await collectMetafilePackages(moduleDir, buildResult.metafile)
 
 	// copy in the metadata
 	await fs.copy('companion', path.join(packageBaseDir, 'companion'))
@@ -254,6 +263,16 @@ export async function buildPackage<M>(
 			}
 		}
 	}
+
+	const shippedPackages = [...metafilePackages.packages]
+	if (Object.keys(packageJson.dependencies).length) {
+		shippedPackages.push(...(await collectInstalledPackages(path.join(packageBaseDir, 'node_modules'))))
+	}
+	const legalInventory = await createLegalInventory(shippedPackages)
+	for (const diagnostic of [...metafilePackages.diagnostics, ...legalInventory.diagnostics]) {
+		console.warn(`License inventory: ${diagnostic}`)
+	}
+	await writeLegalArtifacts(packageBaseDir, legalInventory)
 
 	// Create tgz of the build
 	let tgzFile = toSanitizedDirname(`${manifestJson.id}-${manifestJson.version}`)
