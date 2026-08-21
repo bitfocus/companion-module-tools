@@ -1,112 +1,51 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import {
-	classifyLicenseExpression,
-	createLicenseWarnings,
-	formatLicenseWarning,
-	printLicenseWarnings,
-} from '../dist/scripts/lib/license-warning-util.js'
+import { createLicensePolicyIssues } from '../dist/scripts/lib/license-warning-util.js'
 
-const inventory = {
-	diagnostics: [],
-	packages: [
-		{
-			kind: 'project',
-			name: 'project',
-			version: '1.0.0',
-			declaredLicense: 'MIT AND AGPL-3.0-only',
-			packageRoot: '',
-			contributingPaths: new Set(),
-			legalTexts: [],
-		},
-		{
-			kind: 'bundled',
-			name: 'non-commercial-dep',
-			version: '2.0.0',
-			declaredLicense: 'CC-BY-NC-4.0',
-			packageRoot: '/bundled',
-			contributingPaths: new Set(),
-			legalTexts: [],
-		},
-		{
-			kind: 'external',
-			name: 'non-commercial-dep',
-			version: '2.0.0',
-			declaredLicense: 'CC-BY-NC-4.0',
-			packageRoot: '/external',
-			contributingPaths: new Set(),
-			legalTexts: [],
-		},
-	],
+const pkg = (kind, name, version, declaredLicense) => ({
+	kind,
+	name,
+	version,
+	declaredLicense,
+	packageRoot: `/${name}`,
+	contributingPaths: new Set(),
+	legalTexts: [],
+})
+const issues = (...packages) => createLicensePolicyIssues({ diagnostics: [], packages })
+const messages = (...packages) => issues(...packages).map((issue) => issue.message)
+
+for (const expression of ['MIT', 'ISC', 'BSD-2-Clause', 'MIT AND ISC', 'MIT OR ISC', 'MIT OR GPL-3.0-only', 'ISC OR GPL-3.0-only', '(MIT AND ISC) OR GPL-3.0-only']) {
+	test(`allows compatible dependency expression ${expression}`, () => assert.deepEqual(messages(pkg('external', 'dep', '1.0.0', expression)), []))
 }
 
-test('renders module and surface restricted-license warnings', () => {
-	const moduleWarnings = createLicenseWarnings(inventory, 'connection')
-	assert.equal(moduleWarnings.length, 3)
-	assert.match(
-		moduleWarnings[0].text,
-		/^WARNING: This module is licensed under MIT AND AGPL-3.0-only, which might be fine for Bitfocus Companion, but makes it unavailable in Bitfocus Buttons\./,
-	)
-	assert.match(
-		moduleWarnings[0].text,
-		/Some commercial users of Bitfocus Companion might be limited by this module when it is used over the network\./,
-	)
-	assert.match(
-		moduleWarnings[1].text,
-		/^LICENSE AMBIGUITY: The warning above is shown because MIT AND AGPL-3.0-only combines AGPLv3\/SSPL obligations using AND;/,
-	)
-	assert.match(
-		moduleWarnings[2].text,
-		/^WARNING: Dependency non-commercial-dep@2.0.0 is licensed under CC-BY-NC-4.0, which might be fine for Bitfocus Companion, but makes this module unavailable in Bitfocus Buttons\./,
-	)
-	assert.doesNotMatch(moduleWarnings[2].text, /network/)
-	assert.match(moduleWarnings[2].text, /Review license terms before publishing or using this module commercially\./)
-
-	const surfaceWarnings = createLicenseWarnings(inventory, 'surface')
-	assert.doesNotMatch(surfaceWarnings.map((warning) => warning.text).join('\n'), /Buttons/)
-	assert.match(surfaceWarnings[0].text, /this surface when it is used over the network/)
-	assert.match(surfaceWarnings[2].text, /may restrict this surface's distribution or use/)
-	assert.match(surfaceWarnings[2].text, /Review license terms before publishing or using this surface commercially\./)
-})
-
-test('formats warnings for TTY and writes plain redirected output', () => {
-	const [restricted, ambiguity] = createLicenseWarnings(inventory, 'connection')
-	assert.match(formatLicenseWarning(restricted, true), /^\u001b\[38;5;208mWARNING:/)
-	assert.match(formatLicenseWarning(ambiguity, true), /^\u001b\[33mLICENSE AMBIGUITY:/)
-	assert.ok(formatLicenseWarning(restricted, true).endsWith('\u001b[0m'))
-	assert.doesNotMatch(formatLicenseWarning(restricted, false), /\u001b\[/)
-	const writes = []
-	printLicenseWarnings([restricted], { isTTY: false, write: (text) => writes.push(text) })
-	assert.deepEqual(writes, [`${restricted.text}\n`])
-})
-
-for (const [expression, restricted, families, agplOrSsplAndAmbiguity] of [
-	['MIT', false, [], false],
-	['CC-BY-NC-4.0', true, ['non-commercial'], false],
-	['MIT OR AGPL-3.0-only', false, [], false],
-	['MIT AND AGPL-3.0-only', true, ['network-copyleft'], true],
-	['MIT AND BSD-3-Clause', false, [], false],
-	['AGPL-3.0-only OR SSPL-1.0', true, ['network-copyleft'], false],
-	['CC-BY-NC-4.0 OR AGPL-3.0-only', true, ['network-copyleft', 'non-commercial'], false],
-	['(MIT AND AGPL-3.0-only) OR Apache-2.0', false, [], false],
-	['(MIT AND AGPL-3.0-only) OR (BSD-3-Clause AND SSPL-1.0)', true, ['network-copyleft'], true],
-	['Apache-2.0 AND CC-BY-NC-SA-4.0', true, ['non-commercial'], false],
-	['Non-Commercial', true, ['non-commercial'], false],
-	['Server Side Public License', true, ['network-copyleft'], false],
-	['SSPL', true, ['network-copyleft'], false],
-	['CC-NC', true, ['non-commercial'], false],
-	['MIT OR SSPL', false, [], false],
-	['MIT AND SSPL', true, ['network-copyleft'], true],
-	['MIT OR AGPLv3', false, [], false],
-	['MIT AND AGPLv3', true, ['network-copyleft'], true],
-	[undefined, false, [], false],
-	['', false, [], false],
-	['garbage', false, [], false],
-]) {
-	test(`classifies ${expression ?? 'missing'} license expression`, () => {
-		const result = classifyLicenseExpression(expression)
-		assert.equal(result.restricted, restricted)
-		assert.deepEqual([...result.families].sort(), families)
-		assert.equal(result.agplOrSsplAndAmbiguity, agplOrSsplAndAmbiguity)
+for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apache-2.0', 'GPL-3.0-only OR Apache-2.0', 'garbage', undefined]) {
+	test(`rejects incompatible dependency expression ${expression ?? 'missing'}`, () => {
+		const result = messages(pkg('external', 'dep', '1.0.0', expression))
+		assert.equal(result.length, 1)
+		assert.match(result[0], /Dependency dep@1\.0\.0/)
 	})
 }
+
+test('explains incompatible AND obligations', () => {
+	assert.match(messages(pkg('external', 'dep', '1.0.0', 'MIT AND GPL-3.0-only'))[0], /both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./)
+})
+
+test('requires project declared license exactly MIT after trimming', () => {
+	assert.deepEqual(messages(pkg('project', 'project', '1.0.0', ' MIT ')), [])
+	assert.match(messages(pkg('project', 'project', '1.0.0', 'MIT OR ISC'))[0], /Your module must be licensed under MIT; found MIT OR ISC\./)
+	assert.match(messages(pkg('project', 'project', '1.0.0', undefined))[0], /Your module must be licensed under MIT; no declared license found\./)
+})
+
+test('deduplicates bundled and external dependency, project first and package sorted', () => {
+	const result = issues(
+		pkg('external', 'zeta', '1.0.0', 'GPL-3.0-only'),
+		pkg('bundled', 'alpha', '1.0.0', 'Apache-2.0'),
+		pkg('external', 'alpha', '1.0.0', 'Apache-2.0'),
+		pkg('project', 'project', '1.0.0', 'GPL-3.0-only'),
+	)
+	assert.deepEqual(result.map((issue) => issue.message), [
+		'Your module must be licensed under MIT; found GPL-3.0-only.',
+		'Dependency alpha@1.0.0 has incompatible license declaration Apache-2.0.',
+		'Dependency zeta@1.0.0 has incompatible license declaration GPL-3.0-only.',
+	])
+})

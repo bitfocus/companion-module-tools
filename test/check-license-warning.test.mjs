@@ -18,10 +18,7 @@ async function fixture(license) {
 	return cwd
 }
 
-for (const [moduleType, expected, absent] of [
-	['connection', 'Bitfocus Buttons', undefined],
-	['surface', 'may restrict distribution or use', 'Bitfocus Buttons'],
-]) {
+for (const moduleType of ['connection', 'surface']) {
 	test(`check prints non-failing ${moduleType} warning`, async (t) => {
 		const cwd = await fixture('AGPL-3.0-only')
 		t.after(() => rm(cwd, { recursive: true, force: true }))
@@ -36,8 +33,8 @@ for (const [moduleType, expected, absent] of [
 			stderr: { isTTY: false, write: (text) => writes.push(text) },
 		})
 		assert.equal(validated, true)
-		assert.match(writes.join(''), new RegExp(expected))
-		if (absent) assert.doesNotMatch(writes.join(''), new RegExp(absent))
+		assert.match(writes.join(''), /Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+		assert.doesNotMatch(writes.join(''), /Buttons|surface|Companion/)
 		assert.doesNotMatch(writes.join(''), /\u001b\[/)
 	})
 }

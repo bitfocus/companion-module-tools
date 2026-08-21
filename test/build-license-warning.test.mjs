@@ -16,14 +16,11 @@ const inventory = {
 	],
 }
 
-for (const [moduleType, includes, excludes] of [
-	['connection', 'Bitfocus Buttons', undefined],
-	['surface', 'this surface when it is used over the network', 'Bitfocus Buttons'],
-]) {
+for (const moduleType of ['connection', 'surface']) {
 	test(`build emits non-failing ${moduleType} warning`, () => {
 		const writes = []
 		warnForLegalInventory(inventory, moduleType, { isTTY: false, write: (text) => writes.push(text) })
-		assert.match(writes.join(''), new RegExp(includes))
-		if (excludes) assert.doesNotMatch(writes.join(''), new RegExp(excludes))
+		assert.match(writes.join(''), /Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+		assert.doesNotMatch(writes.join(''), /Buttons|surface|Companion/)
 	})
 }

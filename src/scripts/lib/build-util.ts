@@ -15,7 +15,8 @@ import {
 } from './license-util.js'
 import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies } from './external-install-util.js'
-import { createLicenseWarnings, printLicenseWarnings, type ModuleType } from './license-warning-util.js'
+import { createLicensePolicyIssues, printLicensePolicyIssues } from './license-warning-util.js'
+import type { ModuleType } from './license-warning-util.js'
 import type { LegalInventory } from './license-util.js'
 
 function toSanitizedDirname(name: string) {
@@ -44,7 +45,8 @@ export function warnForLegalInventory(
 	moduleType: ModuleType,
 	stderr?: Pick<NodeJS.WriteStream, 'write' | 'isTTY'>,
 ): void {
-	printLicenseWarnings(createLicenseWarnings(inventory, moduleType), stderr)
+	void moduleType
+	printLicensePolicyIssues(createLicensePolicyIssues(inventory), stderr)
 }
 
 export async function buildPackage<M>(
