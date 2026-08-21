@@ -89,6 +89,26 @@ test('requires project declared license exactly MIT after trimming', () => {
 	)
 })
 
+test('explains ambiguous incompatible project AND declarations without changing MIT rule', () => {
+	assert.match(
+		messages(pkg('project', 'project', '1.0.0', 'MIT AND GPL-3.0-only'))[0],
+		/Your module must be licensed under MIT; found MIT AND GPL-3.0-only\. both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./,
+	)
+	assert.doesNotMatch(messages(pkg('project', 'project', '1.0.0', 'MIT OR GPL-3.0-only'))[0], /both licenses may apply/)
+	assert.doesNotMatch(messages(pkg('project', 'project', '1.0.0', 'MIT AND ISC'))[0], /both licenses may apply/)
+	assert.match(
+		messages(pkg('project', 'project', '1.0.0', '(MIT AND GPL-3.0-only) OR Apache-2.0'))[0],
+		/both licenses may apply, declaration ambiguous and incompatible/,
+	)
+})
+
+test('escapes control characters in displayed declarations', () => {
+	const declaration = 'MIT\r\nAND\tGPL'
+	const message = messages(pkg('external', 'multiline-dep', '1.0.0', declaration))[0]
+	assert.match(message, /unparseable license declaration MIT\\r\\nAND\\tGPL\./)
+	assert.doesNotMatch(message, /\r|\n|\t/)
+})
+
 test('reports same name/version dependencies with distinct declarations and deterministic order', () => {
 	const packages = [
 		pkg('external', 'dep', '1.0.0', 'GPL-3.0-only'),
