@@ -63,9 +63,9 @@ test('distinguishes missing and malformed dependency declarations', () => {
 
 test('explains incompatible AND obligations, including nested incompatible OR branches', () => {
 	for (const expression of ['MIT AND GPL-3.0-only', '(MIT AND GPL-3.0-only) OR Apache-2.0']) {
-		assert.match(
+		assert.equal(
 			messages(pkg('external', 'dep', '1.0.0', expression))[0],
-			/both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./,
+			`Dependency dep@1.0.0 has incompatible license declaration ${expression}. Both licenses may apply, making this declaration ambiguous and incompatible. Ask package author to use OR if either license may be chosen, or clarify package licensing.`,
 		)
 	}
 })
@@ -90,15 +90,15 @@ test('requires project declared license exactly MIT after trimming', () => {
 })
 
 test('explains ambiguous incompatible project AND declarations without changing MIT rule', () => {
-	assert.match(
+	assert.equal(
 		messages(pkg('project', 'project', '1.0.0', 'MIT AND GPL-3.0-only'))[0],
-		/Your module must be licensed under MIT; found MIT AND GPL-3.0-only\. both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./,
+		'Your module must be licensed under MIT; found MIT AND GPL-3.0-only. Both licenses may apply, making this declaration ambiguous and incompatible. Ask package author to use OR if either license may be chosen, or clarify package licensing.',
 	)
 	assert.doesNotMatch(messages(pkg('project', 'project', '1.0.0', 'MIT OR GPL-3.0-only'))[0], /both licenses may apply/)
 	assert.doesNotMatch(messages(pkg('project', 'project', '1.0.0', 'MIT AND ISC'))[0], /both licenses may apply/)
 	assert.match(
 		messages(pkg('project', 'project', '1.0.0', '(MIT AND GPL-3.0-only) OR Apache-2.0'))[0],
-		/both licenses may apply, declaration ambiguous and incompatible/,
+		/\. Both licenses may apply, making this declaration ambiguous and incompatible\. Ask package author to use OR if either license may be chosen, or clarify package licensing\.$/,
 	)
 })
 

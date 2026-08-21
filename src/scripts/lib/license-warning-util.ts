@@ -71,7 +71,7 @@ function displayDeclaration(declaration: string): string {
 
 function ambiguitySuffix(evaluation: Evaluation): string {
 	return evaluation.incompatibleAnd
-		? ' both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing.'
+		? ' Both licenses may apply, making this declaration ambiguous and incompatible. Ask package author to use OR if either license may be chosen, or clarify package licensing.'
 		: ''
 }
 
