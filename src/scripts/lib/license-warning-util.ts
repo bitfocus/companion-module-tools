@@ -16,7 +16,11 @@ type Evaluation = { allowed: boolean; incompatibleAnd: boolean }
 const ALLOWED_DEPENDENCY_LICENSES = new Set(['MIT', 'ISC', 'BSD-2-Clause'])
 
 function evaluate(node: ExpressionNode): Evaluation {
-	if ('license' in node) return { allowed: !node.exception && !node.plus && ALLOWED_DEPENDENCY_LICENSES.has(node.license), incompatibleAnd: false }
+	if ('license' in node)
+		return {
+			allowed: !node.exception && !node.plus && ALLOWED_DEPENDENCY_LICENSES.has(node.license),
+			incompatibleAnd: false,
+		}
 
 	const left = evaluate(node.left)
 	const right = evaluate(node.right)
@@ -68,7 +72,10 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 
 	for (const packageInfo of [...inventory.packages].sort(packageSort)) {
 		const declaration = normalizedDeclaration(packageInfo)
-		const identity = packageInfo.kind === 'project' ? 'project' : `dependency:${packageInfo.name}@${packageInfo.version ?? ''}:${declaration}`
+		const identity =
+			packageInfo.kind === 'project'
+				? 'project'
+				: `dependency:${packageInfo.name}@${packageInfo.version ?? ''}:${declaration}`
 		if (seen.has(identity)) continue
 		seen.add(identity)
 
@@ -96,9 +103,19 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 			const suffix = evaluation.incompatibleAnd
 				? ' both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing.'
 				: ''
-			result.push(issue(packageInfo, `Dependency ${packageLabel(packageInfo)} has incompatible license declaration ${declaration}.${suffix}`))
+			result.push(
+				issue(
+					packageInfo,
+					`Dependency ${packageLabel(packageInfo)} has incompatible license declaration ${declaration}.${suffix}`,
+				),
+			)
 		} catch {
-			result.push(issue(packageInfo, `Dependency ${packageLabel(packageInfo)} has unparseable license declaration ${declaration}.`))
+			result.push(
+				issue(
+					packageInfo,
+					`Dependency ${packageLabel(packageInfo)} has unparseable license declaration ${declaration}.`,
+				),
+			)
 		}
 	}
 	return result

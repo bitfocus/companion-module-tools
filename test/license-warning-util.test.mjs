@@ -14,11 +14,31 @@ const pkg = (kind, name, version, declaredLicense) => ({
 const issues = (...packages) => createLicensePolicyIssues({ diagnostics: [], packages })
 const messages = (...packages) => issues(...packages).map((issue) => issue.message)
 
-for (const expression of ['MIT', 'ISC', 'BSD-2-Clause', 'MIT AND ISC', 'MIT OR ISC', 'MIT OR GPL-3.0-only', 'ISC OR GPL-3.0-only', '(MIT AND ISC) OR GPL-3.0-only']) {
-	test(`allows compatible dependency expression ${expression}`, () => assert.deepEqual(messages(pkg('external', 'dep', '1.0.0', expression)), []))
+for (const expression of [
+	'MIT',
+	'ISC',
+	'BSD-2-Clause',
+	'MIT AND ISC',
+	'MIT OR ISC',
+	'MIT OR GPL-3.0-only',
+	'ISC OR GPL-3.0-only',
+	'(MIT AND ISC) OR GPL-3.0-only',
+]) {
+	test(`allows compatible dependency expression ${expression}`, () =>
+		assert.deepEqual(messages(pkg('external', 'dep', '1.0.0', expression)), []))
 }
 
-for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apache-2.0', 'GPL-3.0-only OR Apache-2.0', '(MIT AND GPL-3.0-only) OR Apache-2.0', 'MIT WITH LLVM-exception', 'MIT+', 'ISC+', 'BSD-2-Clause+', 'garbage', undefined]) {
+for (const expression of [
+	'GPL-3.0-only',
+	'MIT AND GPL-3.0-only',
+	'MIT AND Apache-2.0',
+	'GPL-3.0-only OR Apache-2.0',
+	'(MIT AND GPL-3.0-only) OR Apache-2.0',
+	'MIT WITH LLVM-exception',
+	'MIT+',
+	'ISC+',
+	'BSD-2-Clause+',
+]) {
 	test(`rejects incompatible dependency expression ${expression ?? 'missing'}`, () => {
 		const result = messages(pkg('external', 'dep', '1.0.0', expression))
 		assert.equal(result.length, 1)
@@ -26,20 +46,43 @@ for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apach
 	})
 }
 
+test('distinguishes missing and malformed dependency declarations', () => {
+	assert.match(
+		messages(pkg('external', 'missing-dep', '1.0.0', undefined))[0],
+		/Dependency missing-dep@1\.0\.0 has no declared license\./,
+	)
+	assert.match(
+		messages(pkg('external', 'malformed-dep', '1.0.0', 'MIT AND'))[0],
+		/Dependency malformed-dep@1\.0\.0 has unparseable license declaration MIT AND\./,
+	)
+})
+
 test('explains incompatible AND obligations, including nested incompatible OR branches', () => {
 	for (const expression of ['MIT AND GPL-3.0-only', '(MIT AND GPL-3.0-only) OR Apache-2.0']) {
-		assert.match(messages(pkg('external', 'dep', '1.0.0', expression))[0], /both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./)
+		assert.match(
+			messages(pkg('external', 'dep', '1.0.0', expression))[0],
+			/both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./,
+		)
 	}
 })
 
 test('rejects SPDX WITH exception modifiers', () => {
-	assert.match(messages(pkg('external', 'dep', '1.0.0', 'MIT WITH LLVM-exception'))[0], /incompatible license declaration MIT WITH LLVM-exception/)
+	assert.match(
+		messages(pkg('external', 'dep', '1.0.0', 'MIT WITH LLVM-exception'))[0],
+		/incompatible license declaration MIT WITH LLVM-exception/,
+	)
 })
 
 test('requires project declared license exactly MIT after trimming', () => {
 	assert.deepEqual(messages(pkg('project', 'project', '1.0.0', ' MIT ')), [])
-	assert.match(messages(pkg('project', 'project', '1.0.0', 'MIT OR ISC'))[0], /Your module must be licensed under MIT; found MIT OR ISC\./)
-	assert.match(messages(pkg('project', 'project', '1.0.0', undefined))[0], /Your module must be licensed under MIT; no declared license found\./)
+	assert.match(
+		messages(pkg('project', 'project', '1.0.0', 'MIT OR ISC'))[0],
+		/Your module must be licensed under MIT; found MIT OR ISC\./,
+	)
+	assert.match(
+		messages(pkg('project', 'project', '1.0.0', undefined))[0],
+		/Your module must be licensed under MIT; no declared license found\./,
+	)
 })
 
 test('reports same name/version dependencies with distinct declarations and deterministic order', () => {
@@ -63,9 +106,12 @@ test('deduplicates bundled and external dependency, project first and package so
 		pkg('external', 'alpha', '1.0.0', 'Apache-2.0'),
 		pkg('project', 'project', '1.0.0', 'GPL-3.0-only'),
 	)
-	assert.deepEqual(result.map((issue) => issue.message), [
-		'Your module must be licensed under MIT; found GPL-3.0-only.',
-		'Dependency alpha@1.0.0 has incompatible license declaration Apache-2.0.',
-		'Dependency zeta@1.0.0 has incompatible license declaration GPL-3.0-only.',
-	])
+	assert.deepEqual(
+		result.map((issue) => issue.message),
+		[
+			'Your module must be licensed under MIT; found GPL-3.0-only.',
+			'Dependency alpha@1.0.0 has incompatible license declaration Apache-2.0.',
+			'Dependency zeta@1.0.0 has incompatible license declaration GPL-3.0-only.',
+		],
+	)
 })
