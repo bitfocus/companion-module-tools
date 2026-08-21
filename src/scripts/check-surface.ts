@@ -3,7 +3,6 @@
 import 'zx/globals'
 
 import { createRequire } from 'node:module'
-import { validateSurfaceManifest } from '@companion-surface/base'
 import { findModuleDir } from './lib/build-util.js'
 import { checkPackage } from './lib/check-util.js'
 import { LicensePolicyError } from './lib/license-warning-util.js'
@@ -20,6 +19,7 @@ if (argv.help) {
 	process.exit(0)
 }
 
+const { validateSurfaceManifest } = await import('@companion-surface/base')
 const require = createRequire(import.meta.url)
 const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
 const frameworkDir = await findModuleDir(require.resolve('@companion-surface/base'))

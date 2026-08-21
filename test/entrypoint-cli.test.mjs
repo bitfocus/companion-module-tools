@@ -35,6 +35,10 @@ for (const [binary, script, description] of binaries) {
 test('argv option helper handles zx hyphenated argv key', async () => {
 	const { ignoreLicenseRules } = await import('../dist/scripts/lib/cli-options.js')
 	assert.equal(ignoreLicenseRules({ 'ignore-license-rules': true }), true)
+	assert.equal(ignoreLicenseRules({ 'ignore-license-rules': 'true' }), true)
 	assert.equal(ignoreLicenseRules({ 'ignore-license-rules': false }), false)
+	assert.equal(ignoreLicenseRules({ 'ignore-license-rules': 'false' }), false)
+	assert.equal(ignoreLicenseRules({ 'ignore-license-rules': undefined }), false)
+	assert.equal(ignoreLicenseRules({ 'ignore-license-rules': 'yes' }), false)
 	assert.equal(ignoreLicenseRules({}), false)
 })
