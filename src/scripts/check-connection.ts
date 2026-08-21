@@ -23,7 +23,7 @@ console.log(`Tools path: ${toolsDir}`)
 console.log(`Framework path: ${frameworkDir}`)
 
 try {
-	await checkPackage({ moduleType: 'connection', validateManifest })
+	await checkPackage({ validateManifest })
 } catch (e) {
 	console.error('Manifest validation failed', e)
 	process.exit(1)

@@ -15,7 +15,7 @@ import {
 } from './license-util.js'
 import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies } from './external-install-util.js'
-import { createLicensePolicyIssues, printLicensePolicyIssues } from './license-warning-util.js'
+import { enforceLicensePolicy } from './license-warning-util.js'
 import type { ModuleType } from './license-warning-util.js'
 import type { LegalInventory } from './license-util.js'
 
@@ -40,13 +40,11 @@ export async function findModuleDir(cwd: string) {
 	return path.dirname(pkgJsonPath)
 }
 
-export function warnForLegalInventory(
+export function enforceLegalInventory(
 	inventory: LegalInventory,
-	moduleType: ModuleType,
-	stderr?: Pick<NodeJS.WriteStream, 'write' | 'isTTY'>,
+	options: { ignoreLicenseRules?: boolean; stderr?: Pick<NodeJS.WriteStream, 'write' | 'isTTY'> } = {},
 ): void {
-	void moduleType
-	printLicensePolicyIssues(createLicensePolicyIssues(inventory), stderr)
+	enforceLicensePolicy(inventory, options)
 }
 
 export async function buildPackage<M>(
@@ -54,6 +52,7 @@ export async function buildPackage<M>(
 	validateManifest: (manifest: M, looseChecks: boolean) => void,
 	moduleType: ModuleType,
 	versionRange: string,
+	options: { ignoreLicenseRules?: boolean } = {},
 ) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
@@ -240,7 +239,7 @@ export async function buildPackage<M>(
 		console.warn(`License inventory: ${diagnostic}`)
 	}
 	await writeLegalArtifacts(packageBaseDir, legalInventory)
-	warnForLegalInventory(legalInventory, moduleType)
+	enforceLegalInventory(legalInventory, options)
 
 	// Create tgz of the build
 	let tgzFile = toSanitizedDirname(`${manifestJson.id}-${manifestJson.version}`)

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { warnForLegalInventory } from '../dist/scripts/lib/build-util.js'
+import { enforceLegalInventory } from '../dist/scripts/lib/build-util.js'
 
 const inventory = {
 	diagnostics: [],
@@ -13,14 +13,38 @@ const inventory = {
 			contributingPaths: new Set(),
 			legalTexts: [],
 		},
+		{
+			kind: 'external',
+			name: 'bad-dependency',
+			version: '1.0.0',
+			declaredLicense: 'GPL-3.0-only',
+			packageRoot: '',
+			contributingPaths: new Set(),
+			legalTexts: [],
+		},
 	],
 }
 
-for (const moduleType of ['connection', 'surface']) {
-	test(`build emits non-failing ${moduleType} warning`, () => {
-		const writes = []
-		warnForLegalInventory(inventory, moduleType, { isTTY: false, write: (text) => writes.push(text) })
-		assert.match(writes.join(''), /Your module must be licensed under MIT; found AGPL-3\.0-only\./)
-		assert.doesNotMatch(writes.join(''), /Buttons|surface|Companion/)
-	})
-}
+test('build rejects incompatible inventory after printing all issues', () => {
+	const writes = []
+	assert.throws(
+		() => enforceLegalInventory(inventory, { stderr: { isTTY: false, write: (text) => writes.push(text) } }),
+		/License validation failed with 2 errors/,
+	)
+	assert.match(writes.join(''), /LICENSE ERROR: Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+	assert.match(
+		writes.join(''),
+		/LICENSE ERROR: Dependency bad-dependency@1\.0\.0 has incompatible license declaration GPL-3\.0-only\./,
+	)
+})
+
+test('build ignore option warns and continues', () => {
+	const writes = []
+	assert.doesNotThrow(() =>
+		enforceLegalInventory(inventory, {
+			ignoreLicenseRules: true,
+			stderr: { isTTY: false, write: (text) => writes.push(text) },
+		}),
+	)
+	assert.match(writes.join(''), /LICENSE WARNING: Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+})

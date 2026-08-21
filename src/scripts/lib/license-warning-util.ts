@@ -12,6 +12,14 @@ export interface LicensePolicyIssue {
 
 type ExpressionNode = parse.Info
 type Evaluation = { allowed: boolean; incompatibleAnd: boolean }
+type LicensePolicyOutput = Pick<NodeJS.WriteStream, 'write'>
+
+export class LicensePolicyError extends Error {
+	constructor(public readonly issues: LicensePolicyIssue[]) {
+		super(`License validation failed with ${issues.length} error${issues.length === 1 ? '' : 's'}.`)
+		this.name = 'LicensePolicyError'
+	}
+}
 
 const ALLOWED_DEPENDENCY_LICENSES = new Set(['MIT', 'ISC', 'BSD-2-Clause'])
 
@@ -121,10 +129,21 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 	return result
 }
 
-// Kept as output adapter until enforcement lands in Task 2.
-export function printLicensePolicyIssues(
-	issues: LicensePolicyIssue[],
-	stderr: Pick<NodeJS.WriteStream, 'write'> = process.stderr,
+export function enforceLicensePolicy(
+	inventory: LegalInventory,
+	options: { ignoreLicenseRules?: boolean; stderr?: LicensePolicyOutput } = {},
 ): void {
-	for (const policyIssue of issues) stderr.write(`${policyIssue.message}\n`)
+	const issues = createLicensePolicyIssues(inventory)
+	if (issues.length === 0) return
+	const stderr = options.stderr ?? process.stderr
+	const prefix = options.ignoreLicenseRules ? 'LICENSE WARNING' : 'LICENSE ERROR'
+	for (const policyIssue of issues) stderr.write(`${prefix}: ${policyIssue.message}\n`)
+	if (options.ignoreLicenseRules) {
+		stderr.write(
+			`License validation ignored ${issues.length} error${issues.length === 1 ? '' : 's'} because --ignore-license-rules was provided.\n`,
+		)
+		return
+	}
+	stderr.write(`License validation failed with ${issues.length} error${issues.length === 1 ? '' : 's'}.\n`)
+	throw new LicensePolicyError(issues)
 }

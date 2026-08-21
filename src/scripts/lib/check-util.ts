@@ -1,17 +1,20 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { createLicensePolicyIssues, printLicensePolicyIssues, type ModuleType } from './license-warning-util.js'
+import { enforceLicensePolicy } from './license-warning-util.js'
 import { analyzeShippedLegalInventory } from './license-util.js'
 
 export async function checkPackage<M>(options: {
-	moduleType: ModuleType
 	validateManifest: (manifest: M, looseChecks: boolean) => void
 	cwd?: string
+	ignoreLicenseRules?: boolean
 	stderr?: Pick<NodeJS.WriteStream, 'write' | 'isTTY'>
 }): Promise<void> {
 	const cwd = options.cwd ?? process.cwd()
 	const manifest = JSON.parse(await readFile(path.join(cwd, 'companion', 'manifest.json'), 'utf8')) as M
 	options.validateManifest(manifest, false)
 	const inventory = await analyzeShippedLegalInventory(cwd)
-	printLicensePolicyIssues(createLicensePolicyIssues(inventory), options.stderr)
+	enforceLicensePolicy(inventory, {
+		ignoreLicenseRules: options.ignoreLicenseRules,
+		stderr: options.stderr,
+	})
 }

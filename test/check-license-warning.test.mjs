@@ -18,33 +18,47 @@ async function fixture(license) {
 	return cwd
 }
 
-for (const moduleType of ['connection', 'surface']) {
-	test(`check prints non-failing ${moduleType} warning`, async (t) => {
-		const cwd = await fixture('AGPL-3.0-only')
-		t.after(() => rm(cwd, { recursive: true, force: true }))
-		const writes = []
-		let validated = false
-		await checkPackage({
-			moduleType,
+test('check rejects after printing all license issues', async (t) => {
+	const cwd = await fixture('AGPL-3.0-only')
+	t.after(() => rm(cwd, { recursive: true, force: true }))
+	const writes = []
+	let validated = false
+	await assert.rejects(
+		checkPackage({
 			cwd,
 			validateManifest: () => {
 				validated = true
 			},
 			stderr: { isTTY: false, write: (text) => writes.push(text) },
-		})
-		assert.equal(validated, true)
-		assert.match(writes.join(''), /Your module must be licensed under MIT; found AGPL-3\.0-only\./)
-		assert.doesNotMatch(writes.join(''), /Buttons|surface|Companion/)
-		assert.doesNotMatch(writes.join(''), /\u001b\[/)
+		}),
+		/License validation failed with 1 error/,
+	)
+	assert.equal(validated, true)
+	assert.match(writes.join(''), /LICENSE ERROR: Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+	assert.doesNotMatch(writes.join(''), /Buttons|surface|Companion/)
+	assert.doesNotMatch(writes.join(''), /\u001b\[/)
+})
+
+test('check ignore option warns and resolves', async (t) => {
+	const cwd = await fixture('AGPL-3.0-only')
+	t.after(() => rm(cwd, { recursive: true, force: true }))
+	const writes = []
+	await checkPackage({
+		cwd,
+		ignoreLicenseRules: true,
+		validateManifest: () => {},
+		stderr: { isTTY: false, write: (text) => writes.push(text) },
 	})
-}
+	assert.match(writes.join(''), /LICENSE WARNING: Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+	assert.match(writes.join(''), /ignored 1 error/)
+	assert.doesNotMatch(writes.join(''), /\u001b\[/)
+})
 
 test('check stops before analysis when manifest validation fails', async (t) => {
 	const cwd = await fixture('AGPL-3.0-only')
 	t.after(() => rm(cwd, { recursive: true, force: true }))
 	await assert.rejects(
 		checkPackage({
-			moduleType: 'connection',
 			cwd,
 			validateManifest: () => {
 				throw new Error('invalid manifest')

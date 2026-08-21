@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createLicensePolicyIssues } from '../dist/scripts/lib/license-warning-util.js'
+import {
+	createLicensePolicyIssues,
+	enforceLicensePolicy,
+	LicensePolicyError,
+} from '../dist/scripts/lib/license-warning-util.js'
 
 const pkg = (kind, name, version, declaredLicense) => ({
 	kind,
@@ -97,6 +101,49 @@ test('reports same name/version dependencies with distinct declarations and dete
 	]
 	assert.deepEqual(messages(...packages), expected)
 	assert.deepEqual(messages(...packages.reverse()), expected)
+})
+
+test('enforces all issues with deterministic errors and summary', () => {
+	const writes = []
+	assert.throws(
+		() =>
+			enforceLicensePolicy(
+				{
+					diagnostics: [],
+					packages: [
+						pkg('external', 'zeta', '1.0.0', 'GPL-3.0-only'),
+						pkg('project', 'project', '1.0.0', 'AGPL-3.0-only'),
+					],
+				},
+				{ stderr: { write: (text) => writes.push(text) } },
+			),
+		(error) => error instanceof LicensePolicyError,
+	)
+	assert.deepEqual(writes, [
+		'LICENSE ERROR: Your module must be licensed under MIT; found AGPL-3.0-only.\n',
+		'LICENSE ERROR: Dependency zeta@1.0.0 has incompatible license declaration GPL-3.0-only.\n',
+		'License validation failed with 2 errors.\n',
+	])
+})
+
+test('ignore mode warns and returns, including zero issues', () => {
+	const writes = []
+	assert.doesNotThrow(() =>
+		enforceLicensePolicy(
+			{ diagnostics: [], packages: [pkg('project', 'project', '1.0.0', 'AGPL-3.0-only')] },
+			{ ignoreLicenseRules: true, stderr: { write: (text) => writes.push(text) } },
+		),
+	)
+	assert.deepEqual(writes, [
+		'LICENSE WARNING: Your module must be licensed under MIT; found AGPL-3.0-only.\n',
+		'License validation ignored 1 error because --ignore-license-rules was provided.\n',
+	])
+	const emptyWrites = []
+	enforceLicensePolicy(
+		{ diagnostics: [], packages: [pkg('project', 'project', '1.0.0', 'MIT')] },
+		{ ignoreLicenseRules: true, stderr: { write: (text) => emptyWrites.push(text) } },
+	)
+	assert.deepEqual(emptyWrites, [])
 })
 
 test('deduplicates bundled and external dependency, project first and package sorted', () => {
