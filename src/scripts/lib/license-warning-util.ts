@@ -16,7 +16,7 @@ type Evaluation = { allowed: boolean; incompatibleAnd: boolean }
 const ALLOWED_DEPENDENCY_LICENSES = new Set(['MIT', 'ISC', 'BSD-2-Clause'])
 
 function evaluate(node: ExpressionNode): Evaluation {
-	if ('license' in node) return { allowed: !node.exception && ALLOWED_DEPENDENCY_LICENSES.has(node.license), incompatibleAnd: false }
+	if ('license' in node) return { allowed: !node.exception && !node.plus && ALLOWED_DEPENDENCY_LICENSES.has(node.license), incompatibleAnd: false }
 
 	const left = evaluate(node.left)
 	const right = evaluate(node.right)
@@ -34,6 +34,10 @@ function evaluate(node: ExpressionNode): Evaluation {
 	}
 }
 
+function normalizedDeclaration(packageInfo: ShippedPackageLegalRecord): string {
+	return packageInfo.declaredLicense?.trim() ?? ''
+}
+
 function packageLabel(packageInfo: ShippedPackageLegalRecord): string {
 	return `${packageInfo.name}${packageInfo.version ? `@${packageInfo.version}` : ''}`
 }
@@ -41,7 +45,12 @@ function packageLabel(packageInfo: ShippedPackageLegalRecord): string {
 function packageSort(a: ShippedPackageLegalRecord, b: ShippedPackageLegalRecord): number {
 	if (a.kind === 'project' && b.kind !== 'project') return -1
 	if (a.kind !== 'project' && b.kind === 'project') return 1
-	return a.name.localeCompare(b.name) || (a.version ?? '').localeCompare(b.version ?? '')
+	return (
+		a.name.localeCompare(b.name) ||
+		(a.version ?? '').localeCompare(b.version ?? '') ||
+		normalizedDeclaration(a).localeCompare(normalizedDeclaration(b)) ||
+		a.kind.localeCompare(b.kind)
+	)
 }
 
 function issue(packageInfo: ShippedPackageLegalRecord, message: string): LicensePolicyIssue {
@@ -58,12 +67,12 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 	const seen = new Set<string>()
 
 	for (const packageInfo of [...inventory.packages].sort(packageSort)) {
-		const identity = packageInfo.kind === 'project' ? 'project' : `dependency:${packageInfo.name}@${packageInfo.version ?? ''}`
+		const declaration = normalizedDeclaration(packageInfo)
+		const identity = packageInfo.kind === 'project' ? 'project' : `dependency:${packageInfo.name}@${packageInfo.version ?? ''}:${declaration}`
 		if (seen.has(identity)) continue
 		seen.add(identity)
 
 		if (packageInfo.kind === 'project') {
-			const declaration = packageInfo.declaredLicense?.trim()
 			if (declaration === 'MIT') continue
 			result.push(
 				issue(
@@ -76,7 +85,6 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 			continue
 		}
 
-		const declaration = packageInfo.declaredLicense?.trim()
 		if (!declaration) {
 			result.push(issue(packageInfo, `Dependency ${packageLabel(packageInfo)} has no declared license.`))
 			continue

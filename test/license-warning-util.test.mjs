@@ -18,7 +18,7 @@ for (const expression of ['MIT', 'ISC', 'BSD-2-Clause', 'MIT AND ISC', 'MIT OR I
 	test(`allows compatible dependency expression ${expression}`, () => assert.deepEqual(messages(pkg('external', 'dep', '1.0.0', expression)), []))
 }
 
-for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apache-2.0', 'GPL-3.0-only OR Apache-2.0', '(MIT AND GPL-3.0-only) OR Apache-2.0', 'MIT WITH LLVM-exception', 'garbage', undefined]) {
+for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apache-2.0', 'GPL-3.0-only OR Apache-2.0', '(MIT AND GPL-3.0-only) OR Apache-2.0', 'MIT WITH LLVM-exception', 'MIT+', 'ISC+', 'BSD-2-Clause+', 'garbage', undefined]) {
 	test(`rejects incompatible dependency expression ${expression ?? 'missing'}`, () => {
 		const result = messages(pkg('external', 'dep', '1.0.0', expression))
 		assert.equal(result.length, 1)
@@ -40,6 +40,20 @@ test('requires project declared license exactly MIT after trimming', () => {
 	assert.deepEqual(messages(pkg('project', 'project', '1.0.0', ' MIT ')), [])
 	assert.match(messages(pkg('project', 'project', '1.0.0', 'MIT OR ISC'))[0], /Your module must be licensed under MIT; found MIT OR ISC\./)
 	assert.match(messages(pkg('project', 'project', '1.0.0', undefined))[0], /Your module must be licensed under MIT; no declared license found\./)
+})
+
+test('reports same name/version dependencies with distinct declarations and deterministic order', () => {
+	const packages = [
+		pkg('external', 'dep', '1.0.0', 'GPL-3.0-only'),
+		pkg('bundled', 'dep', '1.0.0', 'Apache-2.0'),
+		pkg('external', 'dep', '1.0.0', 'Apache-2.0'),
+	]
+	const expected = [
+		'Dependency dep@1.0.0 has incompatible license declaration Apache-2.0.',
+		'Dependency dep@1.0.0 has incompatible license declaration GPL-3.0-only.',
+	]
+	assert.deepEqual(messages(...packages), expected)
+	assert.deepEqual(messages(...packages.reverse()), expected)
 })
 
 test('deduplicates bundled and external dependency, project first and package sorted', () => {
