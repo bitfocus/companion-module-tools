@@ -16,12 +16,16 @@ type Evaluation = { allowed: boolean; incompatibleAnd: boolean }
 const ALLOWED_DEPENDENCY_LICENSES = new Set(['MIT', 'ISC', 'BSD-2-Clause'])
 
 function evaluate(node: ExpressionNode): Evaluation {
-	if ('license' in node) return { allowed: ALLOWED_DEPENDENCY_LICENSES.has(node.license), incompatibleAnd: false }
+	if ('license' in node) return { allowed: !node.exception && ALLOWED_DEPENDENCY_LICENSES.has(node.license), incompatibleAnd: false }
 
 	const left = evaluate(node.left)
 	const right = evaluate(node.right)
 	if (node.conjunction === 'or') {
-		return { allowed: left.allowed || right.allowed, incompatibleAnd: false }
+		const allowed = left.allowed || right.allowed
+		return {
+			allowed,
+			incompatibleAnd: !allowed && (left.incompatibleAnd || right.incompatibleAnd),
+		}
 	}
 
 	return {

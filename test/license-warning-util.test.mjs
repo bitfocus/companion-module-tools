@@ -18,7 +18,7 @@ for (const expression of ['MIT', 'ISC', 'BSD-2-Clause', 'MIT AND ISC', 'MIT OR I
 	test(`allows compatible dependency expression ${expression}`, () => assert.deepEqual(messages(pkg('external', 'dep', '1.0.0', expression)), []))
 }
 
-for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apache-2.0', 'GPL-3.0-only OR Apache-2.0', 'garbage', undefined]) {
+for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apache-2.0', 'GPL-3.0-only OR Apache-2.0', '(MIT AND GPL-3.0-only) OR Apache-2.0', 'MIT WITH LLVM-exception', 'garbage', undefined]) {
 	test(`rejects incompatible dependency expression ${expression ?? 'missing'}`, () => {
 		const result = messages(pkg('external', 'dep', '1.0.0', expression))
 		assert.equal(result.length, 1)
@@ -26,8 +26,14 @@ for (const expression of ['GPL-3.0-only', 'MIT AND GPL-3.0-only', 'MIT AND Apach
 	})
 }
 
-test('explains incompatible AND obligations', () => {
-	assert.match(messages(pkg('external', 'dep', '1.0.0', 'MIT AND GPL-3.0-only'))[0], /both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./)
+test('explains incompatible AND obligations, including nested incompatible OR branches', () => {
+	for (const expression of ['MIT AND GPL-3.0-only', '(MIT AND GPL-3.0-only) OR Apache-2.0']) {
+		assert.match(messages(pkg('external', 'dep', '1.0.0', expression))[0], /both licenses may apply, declaration ambiguous and incompatible; ask author to use OR if either license may be chosen or clarify licensing\./)
+	}
+})
+
+test('rejects SPDX WITH exception modifiers', () => {
+	assert.match(messages(pkg('external', 'dep', '1.0.0', 'MIT WITH LLVM-exception'))[0], /incompatible license declaration MIT WITH LLVM-exception/)
 })
 
 test('requires project declared license exactly MIT after trimming', () => {
