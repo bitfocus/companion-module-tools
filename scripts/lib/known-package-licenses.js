@@ -36,3 +36,29 @@ export function knownPackageLicense(name, version) {
 	if (!name || !version) return undefined
 	return KNOWN_PACKAGE_LICENSES[`${name}@${version}`]
 }
+
+/**
+ * Packages which declare a license that is not a valid SPDX expression, mapped to what the license text they publish
+ * actually is. Unlike KNOWN_PACKAGE_LICENSES this overrides what a package says about itself, so it is only consulted
+ * when the declaration cannot be parsed, and can never turn a real license into a more convenient one.
+ *
+ * Only add an entry after reading the license text shipped in that exact version, and record what identified it.
+ * Keys are exact `name@version`, so a later release declaring something different is unaffected.
+ *
+ * @type {Record<string, string>}
+ */
+export const CORRECTED_PACKAGE_LICENSES = {
+	// Declares "BSD". LICENSE is BSD-3-Clause: three conditions, the third forbidding use of the author's name to
+	// endorse derived products, which is exactly what separates it from BSD-2-Clause.
+	'url-template@2.0.8': 'BSD-3-Clause',
+}
+
+/**
+ * @param {string | undefined} name
+ * @param {string | undefined} version
+ * @returns {string | undefined}
+ */
+export function correctedPackageLicense(name, version) {
+	if (!name || !version) return undefined
+	return CORRECTED_PACKAGE_LICENSES[`${name}@${version}`]
+}

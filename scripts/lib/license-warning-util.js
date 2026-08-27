@@ -1,4 +1,5 @@
 import parse from 'spdx-expression-parse'
+import { correctedPackageLicense } from './known-package-licenses.js'
 
 /**
  * @typedef {import('./license-util.js').LegalInventory} LegalInventory
@@ -423,7 +424,12 @@ export function createLicensePolicyIssues(inventory) {
 			continue
 		}
 
-		const parsed = parseDeclaration(declaration)
+		let parsed = parseDeclaration(declaration)
+		// Only ever replaces a declaration which is not valid SPDX, so a correction can never launder a real license
+		if (!parsed || !parsed.strict) {
+			const corrected = correctedPackageLicense(packageInfo.name, packageInfo.version)
+			if (corrected) parsed = parseDeclaration(corrected) ?? parsed
+		}
 		if (!parsed) {
 			result.push(
 				issue(
