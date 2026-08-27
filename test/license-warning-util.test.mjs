@@ -421,3 +421,17 @@ test('every known package license is understood by the policy', () => {
 		assert.deepEqual(dependencyMessages('MIT', license), [], `${key} declared as ${license}`)
 	}
 })
+
+// A correction is only reached when the declaration itself is not valid SPDX, so the real declarations must qualify
+test('the declarations the corrections exist for are genuinely unparseable', () => {
+	for (const [key, declaration] of [
+		['url-template@2.0.8', 'BSD'],
+		['xml-escape@1.1.0', 'MIT License'],
+		['qrcode-terminal@0.12.0', 'Apache 2.0'],
+	]) {
+		assert.ok(CORRECTED_PACKAGE_LICENSES[key], `${key} must have a correction`)
+		assert.throws(() => parse(declaration), `${declaration} must not be valid SPDX`)
+		const [name, version] = [key.slice(0, key.lastIndexOf('@')), key.slice(key.lastIndexOf('@') + 1)]
+		assert.deepEqual(messages(project('MIT'), pkg('external', name, version, declaration)), [])
+	}
+})
