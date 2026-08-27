@@ -31,10 +31,13 @@ test('build rejects incompatible inventory after printing all issues', () => {
 		() => enforceLegalInventory(inventory, { stderr: { isTTY: false, write: (text) => writes.push(text) } }),
 		/License validation failed with 2 errors/,
 	)
-	assert.match(writes.join(''), /LICENSE ERROR: Your module must be licensed under MIT; found AGPL-3\.0-only\./)
 	assert.match(
 		writes.join(''),
-		/LICENSE ERROR: Dependency bad-dependency@1\.0\.0 has incompatible license declaration GPL-3\.0-only\./,
+		/LICENSE ERROR: Your module is licensed as AGPL-3\.0-only, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+	)
+	assert.match(
+		writes.join(''),
+		/LICENSE ERROR: Dependency bad-dependency@1\.0\.0 has license declaration GPL-3\.0-only which is not compatible with the MIT license policy\./,
 	)
 })
 
@@ -46,5 +49,8 @@ test('build ignore option warns and continues', () => {
 			stderr: { isTTY: false, write: (text) => writes.push(text) },
 		}),
 	)
-	assert.match(writes.join(''), /LICENSE WARNING: Your module must be licensed under MIT; found AGPL-3\.0-only\./)
+	assert.match(
+		writes.join(''),
+		/LICENSE WARNING: Your module is licensed as AGPL-3\.0-only, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+	)
 })

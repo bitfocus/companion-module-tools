@@ -9,6 +9,7 @@ import {
 	collectPackageLegalMaterial,
 	createLegalInventory,
 	normalizeInventoryPath,
+	normalizeRepositoryUrl,
 	normalizeLegalText,
 	renderLicenseFile,
 	renderNoticeFile,
@@ -44,6 +45,30 @@ async function createProjectFixture() {
 	await writeFile(path.join(projectDir, 'node_modules', '@scope', 'nested', 'lib', 'index.js'), 'export {}')
 	return projectDir
 }
+
+test('normalizes repository declarations into a source url', () => {
+	const url = 'https://github.com/example/repo'
+	for (const repository of [
+		url,
+		`${url}.git`,
+		{ type: 'git', url: `git+${url}.git` },
+		{ type: 'git', url: 'git://github.com/example/repo.git' },
+		{ type: 'git', url: 'ssh://git@github.com/example/repo.git' },
+		{ type: 'git', url: 'git@github.com:example/repo.git' },
+		'example/repo',
+		'github:example/repo',
+	]) {
+		assert.equal(normalizeRepositoryUrl({ repository }), url)
+	}
+	assert.equal(normalizeRepositoryUrl({ repository: 'gitlab:example/repo' }), 'https://gitlab.com/example/repo')
+	assert.equal(normalizeRepositoryUrl({ repository: 'bitbucket:example/repo' }), 'https://bitbucket.org/example/repo')
+	// Falls back to the homepage, and never emits a url which cannot be followed
+	assert.equal(normalizeRepositoryUrl({ homepage: 'https://example.com/pkg' }), 'https://example.com/pkg')
+	assert.equal(normalizeRepositoryUrl({ repository: { url: 'not a url' }, homepage: url }), url)
+	assert.equal(normalizeRepositoryUrl({}), undefined)
+	assert.equal(normalizeRepositoryUrl({ repository: 42, homepage: 42 }), undefined)
+	assert.equal(normalizeRepositoryUrl({ repository: 'file:///local/repo' }), undefined)
+})
 
 test('normalizes paths without leaking package root', () => {
 	assert.equal(
@@ -162,9 +187,10 @@ test('collects only positive-byte JavaScript metafile contributors by package', 
 		[
 			{
 				kind: 'project',
+				// From package.json, the manifest license the fixture declares is ignored
 				name: 'project',
 				version: '1.0.0',
-				declaredLicense: 'Apache-2.0',
+				declaredLicense: 'MIT',
 				contributingPaths: ['src/main.js'],
 			},
 			{
@@ -324,6 +350,7 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 				name: 'a-dependency',
 				version: '1.0.0',
 				declaredLicense: 'MIT',
+				repositoryUrl: 'https://github.com/example/a-dependency',
 				packageRoot: '/secret/a',
 				contributingPaths: new Set(['index.js']),
 				legalTexts: [
@@ -337,7 +364,7 @@ test('renders deterministic aggregate license and NOTICE artifacts', async (t) =
 	const license = renderLicenseFile(inventory)
 	assert.equal(
 		license,
-		`Packages: project@1.0.0 — Apache-2.0\n${separator}\nproject license\n\nPackages: a-dependency@1.0.0 — MIT, z-dependency@2.0.0 — MIT\n${separator}\nshared license\n`,
+		`Packages: project@1.0.0 — Apache-2.0\n${separator}\nproject license\n\nPackages: a-dependency@1.0.0 — MIT (https://github.com/example/a-dependency), z-dependency@2.0.0 — MIT\n${separator}\nshared license\n`,
 	)
 	assert.equal(renderNoticeFile(inventory), `Packages: project@1.0.0 — Apache-2.0\n${separator}\nproject notice\n`)
 	assert.doesNotMatch(license, /Source|Applies to|Package:|BEGIN|END|\/secret/)

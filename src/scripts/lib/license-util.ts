@@ -12,6 +12,8 @@ export interface ShippedPackage {
 	name: string
 	version?: string
 	declaredLicense?: string
+	/** Where recipients can obtain the source of this package, as required by MPL-2.0 and the GPL family */
+	repositoryUrl?: string
 	packageRoot: string
 	contributingPaths: Set<string>
 }
@@ -46,6 +48,42 @@ type PackageJson = {
 	name?: string
 	version?: string
 	license?: unknown
+	repository?: unknown
+	homepage?: unknown
+}
+
+const SHORTHAND_REPOSITORY_HOSTS: Record<string, string> = {
+	github: 'https://github.com/',
+	gitlab: 'https://gitlab.com/',
+	bitbucket: 'https://bitbucket.org/',
+}
+
+export function normalizeRepositoryUrl(packageJson: PackageJson): string | undefined {
+	const repository = packageJson.repository
+	const declared =
+		typeof repository === 'string'
+			? repository
+			: repository && typeof repository === 'object' && typeof (repository as { url?: unknown }).url === 'string'
+				? (repository as { url: string }).url
+				: undefined
+
+	let url = declared?.trim() ?? ''
+	if (url) {
+		// npm shorthands, either "user/repo" or "<host>:user/repo"
+		if (/^[\w.-]+\/[\w.-]+$/.test(url)) url = `${SHORTHAND_REPOSITORY_HOSTS.github}${url}`
+		const shorthand = /^([a-z]+):([\w.-]+\/[\w.-]+)$/.exec(url)
+		if (shorthand && SHORTHAND_REPOSITORY_HOSTS[shorthand[1]]) {
+			url = `${SHORTHAND_REPOSITORY_HOSTS[shorthand[1]]}${shorthand[2]}`
+		}
+
+		url = url.replace(/^git\+/, '').replace(/^(?:git|ssh):\/\/(?:git@)?/, 'https://')
+		const scpLike = /^git@([^:]+):(.+)$/.exec(url)
+		if (scpLike) url = `https://${scpLike[1]}/${scpLike[2]}`
+		url = url.replace(/\.git$/, '')
+	}
+
+	if (!/^https?:\/\//.test(url)) url = typeof packageJson.homepage === 'string' ? packageJson.homepage.trim() : ''
+	return /^https?:\/\//.test(url) ? url : undefined
 }
 
 export function normalizeInventoryPath(inputPath: string, ownerRoot: string): string {
@@ -95,6 +133,7 @@ function packageFromJson(kind: ShippedPackageKind, packageRoot: string, packageJ
 		name: packageJson.name ?? path.basename(packageRoot),
 		version: packageJson.version,
 		declaredLicense: typeof packageJson.license === 'string' ? packageJson.license : undefined,
+		repositoryUrl: normalizeRepositoryUrl(packageJson),
 		packageRoot,
 		contributingPaths: new Set(),
 	}
@@ -299,7 +338,11 @@ function renderLegalFile(inventory: LegalInventory, roles: LegalText['role'][]):
 	const renderedSections = sections.map((section) => {
 		const packages = [...section.packages.values()].sort(comparePackages)
 		const packageList = packages
-			.map((packageInfo) => `${packageName(packageInfo)} — ${packageInfo.declaredLicense ?? 'UNKNOWN'}`)
+			.map((packageInfo) => {
+				const label = `${packageName(packageInfo)} — ${packageInfo.declaredLicense ?? 'UNKNOWN'}`
+				// Tells recipients where to obtain the source, which MPL-2.0 and the GPL family require
+				return packageInfo.repositoryUrl ? `${label} (${packageInfo.repositoryUrl})` : label
+			})
 			.join(', ')
 		return `Packages: ${packageList}\n${separator}\n${normalizeLegalText(section.text.content)}`
 	})
@@ -380,11 +423,6 @@ export async function collectMetafilePackages(
 ): Promise<MetafilePackageCollection> {
 	const resolvedModuleDir = await realpath(moduleDir)
 	const projectPackageJson = await readPackageJson(resolvedModuleDir)
-	const manifestJson = JSON.parse(
-		await readFile(path.join(resolvedModuleDir, 'companion', 'manifest.json'), 'utf8'),
-	) as {
-		license?: unknown
-	}
 	const packages = new Map<string, ShippedPackage>()
 	const diagnostics: string[] = []
 
@@ -412,16 +450,9 @@ export async function collectMetafilePackages(
 				kind,
 				name: packageJson.name ?? path.basename(packageRoot),
 				version: packageJson.version,
-				declaredLicense:
-					kind === 'project'
-						? typeof manifestJson.license === 'string'
-							? manifestJson.license
-							: typeof packageJson.license === 'string'
-								? packageJson.license
-								: undefined
-						: typeof packageJson.license === 'string'
-							? packageJson.license
-							: undefined,
+				// package.json is the source of truth, the build bakes it into the shipped manifest
+				declaredLicense: typeof packageJson.license === 'string' ? packageJson.license : undefined,
+				repositoryUrl: normalizeRepositoryUrl(packageJson),
 				packageRoot,
 				contributingPaths: new Set(),
 			}

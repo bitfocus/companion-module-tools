@@ -21,31 +21,101 @@ export class LicensePolicyError extends Error {
 	}
 }
 
-const ALLOWED_DEPENDENCY_LICENSES = new Set([
+/** Licenses a module may be declared as, each allowing a different set of dependency licenses */
+export type ProjectLicense = 'MIT' | 'GPL-2.0-only' | 'GPL-3.0-only'
+
+/** Permissive licenses which may be shipped by a module under any of the supported project licenses */
+const PERMISSIVE_DEPENDENCY_LICENSES = [
 	'MIT',
 	'MIT-0',
 	'ISC',
 	'BSD-2-Clause',
 	'BSD-3-Clause',
-	'Apache-2.0',
 	'0BSD',
 	'CC0-1.0',
 	'Unlicense',
 	'BlueOak-1.0.0',
-	'CC-BY-3.0',
-	'CC-BY-4.0',
 	'Python-2.0',
-])
+]
 
-function evaluate(node: ExpressionNode): Evaluation {
-	if ('license' in node)
+const GPL2_DEPENDENCY_LICENSES = [
+	'GPL-2.0-only',
+	'GPL-2.0-or-later',
+	'GPL-2.0', // Deprecated SPDX id for GPL-2.0-only, still widely declared on npm
+]
+
+const GPL3_DEPENDENCY_LICENSES = [
+	'GPL-3.0-only',
+	'GPL-3.0-or-later',
+	'GPL-3.0', // Deprecated SPDX id for GPL-3.0-only, still widely declared on npm
+]
+
+// Each policy pins the combined work to a single GPL version, so no mix of allowed dependencies can end up
+// unlicensable. Offering GPL-2.0-or-later would break that, a GPL-2.0-only and a GPL-3.0-only dependency could then
+// both be accepted while no version satisfies both.
+const PROJECT_LICENSE_POLICIES: Record<ProjectLicense, { allowedDependencyLicenses: Set<string> }> = {
+	MIT: {
+		allowedDependencyLicenses: new Set([
+			...PERMISSIVE_DEPENDENCY_LICENSES,
+			'Apache-2.0',
+			'CC-BY-3.0',
+			'CC-BY-4.0',
+			'MPL-2.0', // File level copyleft, allows bundling if source is available (links bundled LICENSE)
+			// LGPL: in theory acceptable, but applications must be distributed under terms that permit reverse engineering for debugging
+		]),
+	},
+	// Apache-2.0 and the CC-BY licenses are deliberately absent, they cannot be combined with GPL-2.0-only
+	'GPL-2.0-only': {
+		allowedDependencyLicenses: new Set([...PERMISSIVE_DEPENDENCY_LICENSES, ...GPL2_DEPENDENCY_LICENSES, 'MPL-2.0']),
+	},
+	'GPL-3.0-only': {
+		allowedDependencyLicenses: new Set([
+			...PERMISSIVE_DEPENDENCY_LICENSES,
+			...GPL3_DEPENDENCY_LICENSES,
+			'GPL-2.0-or-later', // GPL-2.0-only is absent, only the "or later" form can be taken to GPL-3.0
+			'Apache-2.0',
+			'MPL-2.0',
+		]),
+	},
+}
+
+export const SUPPORTED_PROJECT_LICENSES = Object.keys(PROJECT_LICENSE_POLICIES) as ProjectLicense[]
+
+/** Policy applied to dependencies while the module itself has no usable license declaration */
+const FALLBACK_PROJECT_LICENSE: ProjectLicense = 'MIT'
+
+/** Suggested to module authors, as the one which can use the most of npm and be reused most freely */
+const RECOMMENDED_PROJECT_LICENSE: ProjectLicense = 'MIT'
+
+const LICENSE_HELP_MESSAGE =
+	'Not sure what to do about these? Ask in the Bitfocus community Slack, we are happy to help you work out what they mean for your module.'
+
+function isProjectLicense(declaration: string): declaration is ProjectLicense {
+	return (SUPPORTED_PROJECT_LICENSES as string[]).includes(declaration)
+}
+
+function orList(items: string[]): string {
+	const remaining = [...items]
+	const last = remaining.pop()
+	return remaining.length ? `${remaining.join(', ')} or ${last}` : `${last}`
+}
+
+function supportedProjectLicenseAdvice(): string {
+	const alternatives = SUPPORTED_PROJECT_LICENSES.filter((license) => license !== RECOMMENDED_PROJECT_LICENSE)
+	return `We recommend ${RECOMMENDED_PROJECT_LICENSE} for the widest compatibility, but also accept ${orList(alternatives)} when necessary.`
+}
+
+function evaluate(node: ExpressionNode, allowedLicenses: Set<string>): Evaluation {
+	if ('license' in node) {
+		const license = node.plus ? `${node.license}-or-later` : node.license // "GPL-2.0+" is deprecated for "GPL-2.0-or-later"
 		return {
-			allowed: !node.exception && !node.plus && ALLOWED_DEPENDENCY_LICENSES.has(node.license),
+			allowed: !node.exception && allowedLicenses.has(license),
 			incompatibleAnd: false,
 		}
+	}
 
-	const left = evaluate(node.left)
-	const right = evaluate(node.right)
+	const left = evaluate(node.left, allowedLicenses)
+	const right = evaluate(node.right, allowedLicenses)
 	if (node.conjunction === 'or') {
 		const allowed = left.allowed || right.allowed
 		return {
@@ -109,9 +179,45 @@ function issue(packageInfo: ShippedPackageLegalRecord, message: string): License
 	}
 }
 
+/** Resolve the license the module declares for itself, which selects the policy applied to its dependencies */
+export function resolveProjectLicense(inventory: LegalInventory): {
+	declaration: string
+	license: ProjectLicense | undefined
+} {
+	const projectPackage = inventory.packages.find((packageInfo) => packageInfo.kind === 'project')
+	const declaration = projectPackage ? normalizedDeclaration(projectPackage) : ''
+	return { declaration, license: isProjectLicense(declaration) ? declaration : undefined }
+}
+
+function createProjectIssue(packageInfo: ShippedPackageLegalRecord): LicensePolicyIssue | undefined {
+	const declaration = normalizedDeclaration(packageInfo)
+	if (!declaration) {
+		return issue(
+			packageInfo,
+			`Your module does not declare a license in package.json. ${supportedProjectLicenseAdvice()} Talk to us if you have a reason to use a different license.`,
+		)
+	}
+	if (isProjectLicense(declaration)) return undefined
+
+	let reason = 'which is not supported'
+	try {
+		// A declaration with a conjunction is dual licensing, which a module must pick a single license from
+		if (!('license' in parse(declaration))) reason = 'and dual licensing is not supported'
+	} catch {
+		// Report the declaration as unsupported, even when SPDX parsing fails.
+	}
+	return issue(
+		packageInfo,
+		`Your module is licensed as ${displayDeclaration(declaration)}, ${reason}. ${supportedProjectLicenseAdvice()} Talk to us if you have a reason to use a different license.`,
+	)
+}
+
 export function createLicensePolicyIssues(inventory: LegalInventory): LicensePolicyIssue[] {
 	const result: LicensePolicyIssue[] = []
 	const seen = new Set<string>()
+
+	const projectLicense = resolveProjectLicense(inventory).license ?? FALLBACK_PROJECT_LICENSE
+	const allowedLicenses = PROJECT_LICENSE_POLICIES[projectLicense].allowedDependencyLicenses
 
 	for (const packageInfo of [...inventory.packages].sort(packageSort)) {
 		const declaration = normalizedDeclaration(packageInfo)
@@ -123,24 +229,8 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 		seen.add(identity)
 
 		if (packageInfo.kind === 'project') {
-			if (declaration === 'MIT') continue
-			let suffix = ''
-			if (declaration) {
-				try {
-					suffix = ambiguitySuffix(evaluate(parse(declaration)))
-				} catch {
-					// Project rule reports declaration as non-MIT, even when SPDX parsing fails.
-				}
-			}
-			const displayedDeclaration = displayDeclaration(declaration)
-			result.push(
-				issue(
-					packageInfo,
-					declaration
-						? `Your module must be licensed under MIT; found ${displayedDeclaration}.${suffix}`
-						: 'Your module must be licensed under MIT; no declared license found.',
-				),
-			)
+			const projectIssue = createProjectIssue(packageInfo)
+			if (projectIssue) result.push(projectIssue)
 			continue
 		}
 
@@ -150,12 +240,12 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 		}
 
 		try {
-			const evaluation = evaluate(parse(declaration))
+			const evaluation = evaluate(parse(declaration), allowedLicenses)
 			if (evaluation.allowed) continue
 			result.push(
 				issue(
 					packageInfo,
-					`Dependency ${packageLabel(packageInfo)} has incompatible license declaration ${displayDeclaration(declaration)}.${ambiguitySuffix(evaluation)}`,
+					`Dependency ${packageLabel(packageInfo)} has license declaration ${displayDeclaration(declaration)} which is not compatible with the ${projectLicense} license policy.${ambiguitySuffix(evaluation)}`,
 				),
 			)
 		} catch {
@@ -186,5 +276,6 @@ export function enforceLicensePolicy(
 		return
 	}
 	stderr.write(`License validation failed with ${issues.length} error${issues.length === 1 ? '' : 's'}.\n`)
+	stderr.write(`${LICENSE_HELP_MESSAGE}\n`)
 	throw new LicensePolicyError(issues)
 }
