@@ -166,6 +166,86 @@ function evaluate(node, allowedLicenses) {
 }
 
 /**
+ * spdx-expression-parse rejects the whole expression when any leaf is not a valid SPDX identifier, so a legacy
+ * declaration like "(MIT OR GPL)" never reaches the OR logic at all. Re-read those keeping only the boolean
+ * structure, so an unrecognised identifier becomes a license which is simply never allowed. OR then still offers a
+ * real choice, and AND still requires every branch, so nothing unknown can be accepted on its own.
+ *
+ * @param {string} declaration
+ * @returns {import('spdx-expression-parse').Info | undefined}
+ */
+function parseLenient(declaration) {
+	const tokens = declaration.match(/\(|\)|[^\s()]+/g)
+	if (!tokens) return undefined
+	let index = 0
+	const keyword = (token, word) => token !== undefined && token.toUpperCase() === word
+
+	function parseExpression() {
+		let node = parseTerm()
+		if (!node) return undefined
+		while (keyword(tokens[index], 'OR')) {
+			index++
+			const right = parseTerm()
+			if (!right) return undefined
+			node = { left: node, conjunction: 'or', right }
+		}
+		return node
+	}
+
+	function parseTerm() {
+		let node = parseFactor()
+		if (!node) return undefined
+		while (keyword(tokens[index], 'AND')) {
+			index++
+			const right = parseFactor()
+			if (!right) return undefined
+			node = { left: node, conjunction: 'and', right }
+		}
+		return node
+	}
+
+	function parseFactor() {
+		const token = tokens[index]
+		if (token === undefined || token === ')') return undefined
+		if (token === '(') {
+			index++
+			const node = parseExpression()
+			if (!node || tokens[index] !== ')') return undefined
+			index++
+			return node
+		}
+		if (keyword(token, 'AND') || keyword(token, 'OR') || keyword(token, 'WITH')) return undefined
+		index++
+
+		const plus = token.endsWith('+')
+		const node = { license: plus ? token.slice(0, -1) : token, plus }
+		if (keyword(tokens[index], 'WITH')) {
+			index++
+			if (tokens[index] === undefined) return undefined
+			node.exception = tokens[index]
+			index++
+		}
+		return node
+	}
+
+	const node = parseExpression()
+	return node && index === tokens.length ? node : undefined
+}
+
+/**
+ * @param {string} declaration
+ * @returns {{ node: import('spdx-expression-parse').Info, strict: boolean } | undefined}
+ */
+function parseDeclaration(declaration) {
+	try {
+		return { node: parse(declaration), strict: true }
+	} catch {
+		const node = parseLenient(declaration)
+		return node ? { node, strict: false } : undefined
+	}
+}
+
+/**
  * @param {ShippedPackageLegalRecord} packageInfo
  * @returns {string}
  */
@@ -343,23 +423,35 @@ export function createLicensePolicyIssues(inventory) {
 			continue
 		}
 
-		try {
-			const evaluation = evaluate(parse(declaration), allowedLicenses)
-			if (evaluation.allowed) continue
-			result.push(
-				issue(
-					packageInfo,
-					`Dependency ${packageLabel(packageInfo)} has license declaration ${displayDeclaration(declaration)} which is not compatible with the ${projectLicense} license policy.${ambiguitySuffix(evaluation)}`,
-				),
-			)
-		} catch {
+		const parsed = parseDeclaration(declaration)
+		if (!parsed) {
 			result.push(
 				issue(
 					packageInfo,
 					`Dependency ${packageLabel(packageInfo)} has unparseable license declaration ${displayDeclaration(declaration)}.`,
 				),
 			)
+			continue
 		}
+
+		const evaluation = evaluate(parsed.node, allowedLicenses)
+		if (evaluation.allowed) continue
+		if (!parsed.strict) {
+			// Reaching here means no branch we could recognise was allowed, so the unrecognised ones are the problem
+			result.push(
+				issue(
+					packageInfo,
+					`Dependency ${packageLabel(packageInfo)} has license declaration ${displayDeclaration(declaration)} which is not a valid SPDX identifier, so it cannot be checked against the ${projectLicense} license policy. Ask the package author to declare a specific SPDX license.`,
+				),
+			)
+			continue
+		}
+		result.push(
+			issue(
+				packageInfo,
+				`Dependency ${packageLabel(packageInfo)} has license declaration ${displayDeclaration(declaration)} which is not compatible with the ${projectLicense} license policy.${ambiguitySuffix(evaluation)}`,
+			),
+		)
 	}
 	return result
 }

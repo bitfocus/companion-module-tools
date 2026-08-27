@@ -249,7 +249,8 @@ test('reports a dual licensed module without explaining dependency ambiguity', (
 test('escapes control characters in displayed declarations', () => {
 	const declaration = 'MIT\r\nAND\tGPL'
 	const message = messages(pkg('external', 'multiline-dep', '1.0.0', declaration))[0]
-	assert.match(message, /unparseable license declaration MIT\\r\\nAND\\tGPL\./)
+	// Whitespace splits this into MIT AND GPL, where the unrecognised branch keeps the AND from being allowed
+	assert.match(message, /license declaration MIT\\r\\nAND\\tGPL which is not a valid SPDX identifier/)
 	assert.doesNotMatch(message, /\r|\n|\t/)
 })
 
@@ -323,4 +324,50 @@ test('deduplicates bundled and external dependency, project first and package so
 			'Dependency zeta@1.0.0 has license declaration GPL-3.0-only which is not compatible with the MIT license policy.',
 		],
 	)
+})
+
+// spdx-expression-parse rejects the whole expression on the first invalid identifier, so these legacy declarations
+// never reached the OR logic. An OR offers a real choice, so a branch we accept is enough.
+test('accepts a legacy OR declaration whose other branch is not valid SPDX', () => {
+	for (const [projectLicense, expression] of [
+		['MIT', '(MIT OR GPL)'],
+		['MIT', '(MIT OR Apache2)'],
+		['MIT', 'MIT OR GPL'],
+		['MIT', 'MIT or GPL'],
+		['GPL-2.0-only', '(MIT OR GPL)'],
+		['MIT', '(GPL OR MIT)'],
+		['MIT', '(BSD OR MIT OR GPL)'],
+	]) {
+		assert.deepEqual(dependencyMessages(projectLicense, expression), [], `${expression} under ${projectLicense}`)
+	}
+})
+
+test('never accepts an unrecognised identifier on its own or through AND', () => {
+	for (const expression of ['BSD', 'Apache2', 'GPL', 'MIT AND GPL', 'GPL AND MIT', '(MIT OR GPL) AND BSD']) {
+		const result = dependencyMessages('MIT', expression)
+		assert.equal(result.length, 1, `${expression} must be reported`)
+		assert.match(result[0], /is not a valid SPDX identifier/)
+	}
+})
+
+test('explains that an unrecognised identifier cannot be checked, rather than blaming the policy', () => {
+	assert.deepEqual(dependencyMessages('MIT', 'BSD'), [
+		'Dependency dep@1.0.0 has license declaration BSD which is not a valid SPDX identifier, so it cannot be checked against the MIT license policy. Ask the package author to declare a specific SPDX license.',
+	])
+})
+
+test('still reports a declaration with no usable structure as unparseable', () => {
+	for (const expression of ['MIT AND', 'MIT OR', '(MIT', 'MIT)', '()', 'MIT WITH']) {
+		const result = dependencyMessages('MIT', expression)
+		assert.equal(result.length, 1, `${expression} must be reported`)
+		assert.match(result[0], /has unparseable license declaration/)
+	}
+})
+
+test('keeps a valid SPDX expression on the strict path with its original message', () => {
+	assert.deepEqual(dependencyMessages('MIT', 'GPL-2.0-only'), [
+		'Dependency dep@1.0.0 has license declaration GPL-2.0-only which is not compatible with the MIT license policy.',
+	])
+	// A lenient reparse must not smuggle in an exception we would otherwise reject
+	assert.match(dependencyMessages('MIT', 'MIT WITH LLVM-exception')[0], /not compatible with the MIT license policy/)
 })
