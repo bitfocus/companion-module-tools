@@ -36,6 +36,7 @@ const PERMISSIVE_DEPENDENCY_LICENSES = [
 	'Unlicense',
 	'BlueOak-1.0.0',
 	'Python-2.0',
+	'Zlib',
 ]
 
 const GPL2_DEPENDENCY_LICENSES = [

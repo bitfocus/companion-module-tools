@@ -42,6 +42,7 @@ for (const expression of [
 	'CC-BY-3.0',
 	'CC-BY-4.0',
 	'Python-2.0',
+	'Zlib',
 	'MPL-2.0',
 	'MIT AND ISC',
 	'MIT OR ISC',
@@ -79,6 +80,7 @@ for (const expression of [
 	'ISC',
 	'BSD-3-Clause',
 	'0BSD',
+	'Zlib',
 	'GPL-2.0-only',
 	'GPL-2.0-or-later',
 	'MPL-2.0',
@@ -113,6 +115,7 @@ for (const expression of [
 for (const expression of [
 	'MIT',
 	'0BSD',
+	'Zlib',
 	'Apache-2.0',
 	'MPL-2.0',
 	'GPL-3.0-only',
