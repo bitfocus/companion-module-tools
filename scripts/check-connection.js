@@ -7,9 +7,19 @@ import { fs } from 'zx'
 import { findUp } from 'find-up'
 import { validateManifest } from '@companion-module/base'
 import { createRequire } from 'module'
+import { checkPackage } from './lib/check-util.js'
+import { LicensePolicyError } from './lib/license-warning-util.js'
+import { ignoreLicenseRules } from './lib/cli-options.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
+}
+
+if (argv.help) {
+	console.log('Usage: companion-module-check [--ignore-license-rules]')
+	console.log('Checks the companion connection module')
+	console.log('  --ignore-license-rules: Report license policy issues as warnings instead of failing')
+	process.exit(0)
 }
 
 const require = createRequire(import.meta.url)
@@ -30,11 +40,12 @@ console.log(`Checking for: ${process.cwd()}`)
 console.log(`Tools path: ${toolsDir}`)
 console.log(`Framework path: ${frameworkDir}`)
 
-const manifestJson = JSON.parse(await fs.readFile(path.resolve('./companion/manifest.json')))
-
 try {
-	validateManifest(manifestJson)
+	await checkPackage({ validateManifest, ignoreLicenseRules: ignoreLicenseRules(argv) })
 } catch (e) {
-	console.error('Manifest validation failed', e)
-	process.exit(1)
+	if (e instanceof LicensePolicyError) process.exitCode = 1
+	else {
+		console.error('Manifest validation failed', e)
+		process.exit(1)
+	}
 }

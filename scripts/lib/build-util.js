@@ -6,6 +6,13 @@ import { findUp } from 'find-up'
 import * as tar from 'tar'
 import { createRequire } from 'module'
 import * as semver from 'semver'
+import {
+	collectInstalledPackages,
+	collectProductionPackages,
+	createLegalInventory,
+	writeLegalArtifacts,
+} from './license-util.js'
+import { enforceLicensePolicy } from './license-warning-util.js'
 
 function toSanitizedDirname(name) {
 	return name.replace(/[^a-zA-Z0-9-\.]/g, '-').replace(/[-+]/g, '-')
@@ -21,7 +28,7 @@ async function findModuleDir(cwd) {
 	return path.dirname(pkgJsonPath)
 }
 
-export async function buildPackage(frameworkPackageName, validateManifest, moduleType, versionRange) {
+export async function buildPackage(frameworkPackageName, validateManifest, moduleType, versionRange, options = {}) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
 	const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
@@ -233,6 +240,18 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 			}
 		}
 	}
+
+	const shippedPackages = await collectProductionPackages(moduleDir)
+	if (Object.keys(packageJson.dependencies).length) {
+		// The externals tree yarn just installed is the exact set which ships alongside the bundle
+		shippedPackages.packages.push(...(await collectInstalledPackages(path.join(packageBaseDir, 'node_modules'))))
+	}
+	const legalInventory = await createLegalInventory(shippedPackages.packages)
+	for (const diagnostic of [...shippedPackages.diagnostics, ...legalInventory.diagnostics]) {
+		console.warn(`License inventory: ${diagnostic}`)
+	}
+	await writeLegalArtifacts(packageBaseDir, legalInventory)
+	enforceLicensePolicy(legalInventory, { ignoreLicenseRules: options.ignoreLicenseRules })
 
 	// Create tgz of the build
 	let tgzFile = toSanitizedDirname(`${manifestJson.id}-${manifestJson.version}`)
