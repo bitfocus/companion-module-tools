@@ -4,6 +4,7 @@ import path from 'node:path'
 import * as esbuild from 'esbuild'
 import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies, withInstalledExternalTree } from './external-install-util.js'
+import { knownPackageLicense } from './known-package-licenses.js'
 
 export type ShippedPackageKind = 'project' | 'bundled' | 'external'
 
@@ -117,7 +118,12 @@ function asLicenseString(license: unknown): string | undefined {
 
 /** Reads a package's license, preferring the current field over the deprecated plural one */
 function declaredLicenseOf(packageJson: PackageJson): string | undefined {
-	return asLicenseString(packageJson.license) ?? asLicenseString(packageJson.licenses)
+	return (
+		asLicenseString(packageJson.license) ??
+		asLicenseString(packageJson.licenses) ??
+		// Only for packages declaring nothing at all, so this can never override what a package says about itself
+		knownPackageLicense(packageJson.name, packageJson.version)
+	)
 }
 
 async function readManifestLicense(moduleDir: string): Promise<unknown> {

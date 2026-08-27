@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
+import { KNOWN_PACKAGE_LICENSES } from '../dist/scripts/lib/known-package-licenses.js'
 import {
 	analyzeShippedLegalInventory,
 	collectInstalledPackages,
@@ -87,6 +88,29 @@ test('reads the deprecated npm license fields', async (t) => {
 			['current-form', 'BSD-3-Clause'],
 			['object-form', 'ISC'],
 			['unusable-form', undefined],
+		],
+	)
+})
+
+test('falls back to confirmed licenses for packages which declare none', async (t) => {
+	const nodeModulesDir = await mkdtemp(path.join(tmpdir(), 'license-known-'))
+	t.after(() => rm(nodeModulesDir, { recursive: true, force: true }))
+	const [name, version] = Object.keys(KNOWN_PACKAGE_LICENSES)[0].split('@')
+	const known = KNOWN_PACKAGE_LICENSES[`${name}@${version}`]
+
+	await writeJson(path.join(nodeModulesDir, 'confirmed', 'package.json'), { name, version })
+	// A declared license always wins, so an entry can never hide what a package says about itself
+	await writeJson(path.join(nodeModulesDir, 'declared', 'package.json'), { name, version, license: 'GPL-3.0-only' })
+	// Entries are for one exact version, as a later release can change license
+	await writeJson(path.join(nodeModulesDir, 'other-version', 'package.json'), { name, version: `${version}-other` })
+
+	const packages = await collectInstalledPackages(nodeModulesDir)
+	assert.deepEqual(
+		packages.map((pkg) => [pkg.packageRoot.split(path.sep).pop(), pkg.declaredLicense]),
+		[
+			['confirmed', known],
+			['declared', 'GPL-3.0-only'],
+			['other-version', undefined],
 		],
 	)
 })

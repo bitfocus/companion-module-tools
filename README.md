@@ -31,6 +31,10 @@ The build and check commands validate every bundled and external dependency agai
 values are `MIT` (recommended, it can use the most of npm), `GPL-2.0-only` and `GPL-3.0-only`. Dual licensing is not
 supported, and a module which declares no license in its manifest falls back to the one in `package.json`.
 
+Some older packages ship a license file but declare no license in their `package.json`, so there is nothing to check
+against. Those are listed in `src/scripts/lib/known-package-licenses.ts` once their license has been confirmed from
+what they publish, so open a PR there if you hit one. A license a package declares itself always wins over that list.
+
 Pass `--ignore-license-rules` to report license problems as warnings instead of failing the command.
 
 ## Upgrading from v1.x to v2.0
