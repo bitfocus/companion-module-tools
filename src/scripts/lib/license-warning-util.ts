@@ -38,6 +38,10 @@ const PERMISSIVE_DEPENDENCY_LICENSES = [
 	'BlueOak-1.0.0',
 	'Python-2.0',
 	'Zlib',
+	'BSL-1.0',
+	// Not an SPDX identifier, SPDX has none for a public domain dedication. Recording it as CC0-1.0 or Unlicense
+	// would name a specific legal instrument the package never used, and public domain carries no obligation at all.
+	'Public-Domain',
 ]
 
 const GPL2_DEPENDENCY_LICENSES = [
