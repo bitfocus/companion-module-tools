@@ -17,6 +17,12 @@ export const KNOWN_PACKAGE_LICENSES: Record<string, string> = {
 	// Readme.md "## License" section in the published tarball, and a LICENSE added to
 	// https://github.com/component/bind after this version was published
 	'component-bind@1.0.0': 'MIT',
+	// LICENSE, "The MIT License (MIT)", in the published tarball, https://github.com/changchang/seq-queue
+	'seq-queue@0.0.5': 'MIT',
+	// license, "MIT License", in the published tarball, https://github.com/fabiospampinato/atomically
+	'atomically@2.0.3': 'MIT',
+	// license, "MIT License", in the published tarball, https://github.com/fabiospampinato/stubborn-fs
+	'stubborn-fs@1.2.5': 'MIT',
 }
 
 export function knownPackageLicense(name: string | undefined, version: string | undefined): string | undefined {
