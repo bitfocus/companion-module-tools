@@ -50,6 +50,7 @@ type PackageJson = {
 	name?: string
 	version?: string
 	license?: unknown
+	licenses?: unknown
 	repository?: unknown
 	homepage?: unknown
 }
@@ -103,7 +104,20 @@ async function readPackageJson(packageRoot: string): Promise<PackageJson> {
 }
 
 function asLicenseString(license: unknown): string | undefined {
-	return typeof license === 'string' ? license : undefined
+	if (typeof license === 'string') return license
+	// npm deprecated { type, url } and arrays of it long ago, but older packages are still published with them
+	if (Array.isArray(license)) {
+		const choices = license.map(asLicenseString).filter((choice) => choice !== undefined)
+		if (!choices.length) return undefined
+		return choices.length === 1 ? choices[0] : `(${choices.join(' OR ')})` // An array offers a choice of licenses
+	}
+	if (license && typeof license === 'object') return asLicenseString((license as { type?: unknown }).type)
+	return undefined
+}
+
+/** Reads a package's license, preferring the current field over the deprecated plural one */
+function declaredLicenseOf(packageJson: PackageJson): string | undefined {
+	return asLicenseString(packageJson.license) ?? asLicenseString(packageJson.licenses)
 }
 
 async function readManifestLicense(moduleDir: string): Promise<unknown> {
@@ -117,19 +131,22 @@ async function readManifestLicense(moduleDir: string): Promise<unknown> {
 
 async function findPackageRoot(inputPath: string, moduleDir: string): Promise<string | undefined> {
 	const nodeModulesDir = path.join(moduleDir, 'node_modules')
-	let currentDir = path.dirname(inputPath)
+	if (!inputPath.startsWith(`${nodeModulesDir}${path.sep}`)) return undefined
 
-	while (currentDir.startsWith(`${nodeModulesDir}${path.sep}`)) {
-		try {
-			// Packages mark subdirectories with a package.json carrying only a type, the real root declares a version
-			if (typeof (await readPackageJson(currentDir)).version === 'string') return currentDir
-		} catch {
-			// An unreadable or missing package.json cannot identify the package, so keep walking up
-		}
-		currentDir = path.dirname(currentDir)
+	// A package owns everything below the directory node_modules resolves it to. Its own subdirectories can hold a
+	// package.json marking their module type, sometimes with a name and version, so only this boundary identifies it.
+	const segments = inputPath.split(path.sep)
+	const rootIndex = segments.lastIndexOf('node_modules') + 1
+	const packageRoot = segments
+		.slice(0, segments[rootIndex]?.startsWith('@') ? rootIndex + 2 : rootIndex + 1)
+		.join(path.sep)
+
+	try {
+		await readPackageJson(packageRoot)
+		return packageRoot
+	} catch {
+		return undefined // Without a package.json this is not a package, so the file counts as project code
 	}
-
-	return undefined
 }
 
 function getContributingInputs(metafile: esbuild.Metafile): string[] {
@@ -148,7 +165,7 @@ function packageFromJson(kind: ShippedPackageKind, packageRoot: string, packageJ
 		kind,
 		name: packageJson.name ?? path.basename(packageRoot),
 		version: packageJson.version,
-		declaredLicense: asLicenseString(packageJson.license),
+		declaredLicense: declaredLicenseOf(packageJson),
 		repositoryUrl: normalizeRepositoryUrl(packageJson),
 		packageRoot,
 		contributingPaths: new Set(),
@@ -444,7 +461,7 @@ export async function collectMetafilePackages(
 
 	// The manifest license is what the packaged module is distributed as, which is what its dependencies must fit.
 	// package.json only licenses the module's own source, so it is a fallback for modules not declaring the other.
-	const projectLicense = (await readManifestLicense(resolvedModuleDir)) ?? projectPackageJson.license
+	const projectLicense = (await readManifestLicense(resolvedModuleDir)) ?? declaredLicenseOf(projectPackageJson)
 
 	for (const input of getContributingInputs(metafile)) {
 		if (input.startsWith('<')) {
@@ -470,8 +487,8 @@ export async function collectMetafilePackages(
 				kind,
 				name: packageJson.name ?? path.basename(packageRoot),
 				version: packageJson.version,
-				declaredLicense: asLicenseString(kind === 'project' ? projectLicense : packageJson.license),
-				sourceLicense: kind === 'project' ? asLicenseString(projectPackageJson.license) : undefined,
+				declaredLicense: kind === 'project' ? asLicenseString(projectLicense) : declaredLicenseOf(packageJson),
+				sourceLicense: kind === 'project' ? declaredLicenseOf(projectPackageJson) : undefined,
 				repositoryUrl: normalizeRepositoryUrl(packageJson),
 				packageRoot,
 				contributingPaths: new Set(),

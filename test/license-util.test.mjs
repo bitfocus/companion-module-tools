@@ -47,6 +47,50 @@ async function createProjectFixture() {
 	return projectDir
 }
 
+test('reads the deprecated npm license fields', async (t) => {
+	const nodeModulesDir = await mkdtemp(path.join(tmpdir(), 'license-deprecated-'))
+	t.after(() => rm(nodeModulesDir, { recursive: true, force: true }))
+	// npm replaced these with a plain SPDX string, but packages published before that are still installed today
+	await writeJson(path.join(nodeModulesDir, 'array-form', 'package.json'), {
+		name: 'array-form',
+		version: '1.0.0',
+		licenses: [{ type: 'MIT', url: 'http://example.com/MIT' }],
+	})
+	await writeJson(path.join(nodeModulesDir, 'choice-form', 'package.json'), {
+		name: 'choice-form',
+		version: '1.0.0',
+		licenses: [{ type: 'MIT' }, { type: 'Apache-2.0' }],
+	})
+	await writeJson(path.join(nodeModulesDir, 'object-form', 'package.json'), {
+		name: 'object-form',
+		version: '1.0.0',
+		license: { type: 'ISC', url: 'http://example.com/ISC' },
+	})
+	await writeJson(path.join(nodeModulesDir, 'current-form', 'package.json'), {
+		name: 'current-form',
+		version: '1.0.0',
+		license: 'BSD-3-Clause',
+		licenses: [{ type: 'GPL-3.0-only' }],
+	})
+	await writeJson(path.join(nodeModulesDir, 'unusable-form', 'package.json'), {
+		name: 'unusable-form',
+		version: '1.0.0',
+		licenses: [{ url: 'http://example.com/mystery' }],
+	})
+
+	const packages = await collectInstalledPackages(nodeModulesDir)
+	assert.deepEqual(
+		packages.map((pkg) => [pkg.name, pkg.declaredLicense]),
+		[
+			['array-form', 'MIT'],
+			['choice-form', '(MIT OR Apache-2.0)'],
+			['current-form', 'BSD-3-Clause'],
+			['object-form', 'ISC'],
+			['unusable-form', undefined],
+		],
+	)
+})
+
 test('attributes files to the package root, not a nested module type marker', async (t) => {
 	const moduleDir = await mkdtemp(path.join(tmpdir(), 'license-nested-marker-'))
 	t.after(() => rm(moduleDir, { recursive: true, force: true }))
@@ -58,9 +102,13 @@ test('attributes files to the package root, not a nested module type marker', as
 	})
 	await writeJson(path.join(moduleDir, 'companion', 'manifest.json'), {})
 	await mkdir(path.join(moduleDir, 'src'), { recursive: true })
-	await writeFile(path.join(moduleDir, 'src', 'main.js'), "import { used } from 'dual-package'; console.log(used)")
+	await writeFile(
+		path.join(moduleDir, 'src', 'main.js'),
+		"import { used } from 'dual-package'; import { scoped } from '@scope/scoped-dep'; console.log(used, scoped)",
+	)
 
-	// Dual published packages mark their output directories with a package.json carrying only a name and type
+	// Dual published packages mark their output directories with a package.json, which can repeat the name and
+	// version of the real root while declaring no license of its own
 	const packageDir = path.join(moduleDir, 'node_modules', 'dual-package')
 	await writeJson(path.join(packageDir, 'package.json'), {
 		name: 'dual-package',
@@ -69,15 +117,51 @@ test('attributes files to the package root, not a nested module type marker', as
 		main: 'lib/cjs/index.js',
 	})
 	await writeFile(path.join(packageDir, 'LICENSE'), 'dual package license\n')
-	await writeJson(path.join(packageDir, 'lib', 'cjs', 'package.json'), { name: 'dual-package', type: 'commonjs' })
-	await writeFile(path.join(packageDir, 'lib', 'cjs', 'index.js'), 'exports.used = true')
+	await writeJson(path.join(packageDir, 'lib', 'cjs', 'package.json'), {
+		name: 'dual-package',
+		version: '3.1.2',
+		type: 'commonjs',
+	})
+	await writeFile(path.join(packageDir, 'lib', 'cjs', 'index.js'), "exports.used = require('inner-dep').inner")
+
+	// A nested dependency owns its own files, the package hosting it must not claim them
+	const innerDir = path.join(packageDir, 'node_modules', 'inner-dep')
+	await writeJson(path.join(innerDir, 'package.json'), {
+		name: 'inner-dep',
+		version: '9.9.9',
+		license: 'ISC',
+		main: 'build/index.js',
+	})
+	await writeJson(path.join(innerDir, 'build', 'package.json'), { name: 'inner-dep', version: '9.9.9' })
+	await writeFile(path.join(innerDir, 'build', 'index.js'), 'exports.inner = true')
+
+	const scopedDir = path.join(moduleDir, 'node_modules', '@scope', 'scoped-dep')
+	await writeJson(path.join(scopedDir, 'package.json'), {
+		name: '@scope/scoped-dep',
+		version: '2.0.0',
+		license: 'BSD-3-Clause',
+		main: 'lib/esm/index.js',
+	})
+	await writeJson(path.join(scopedDir, 'lib', 'esm', 'package.json'), {
+		name: '@scope/scoped-dep',
+		version: '2.0.0',
+		type: 'module',
+	})
+	await writeFile(path.join(scopedDir, 'lib', 'esm', 'index.js'), 'export const scoped = true')
 
 	const inventory = await analyzeShippedLegalInventory(moduleDir)
-	const dependency = inventory.packages.find((pkg) => pkg.kind === 'bundled')
-	assert.equal(dependency.name, 'dual-package')
-	assert.equal(dependency.version, '3.1.2')
-	assert.equal(dependency.declaredLicense, 'MIT')
-	assert.deepEqual([...dependency.contributingPaths], ['lib/cjs/index.js'])
+	assert.deepEqual(
+		inventory.packages
+			.filter((pkg) => pkg.kind === 'bundled')
+			.map((pkg) => [pkg.name, pkg.version, pkg.declaredLicense, [...pkg.contributingPaths]])
+			.sort(),
+		[
+			['@scope/scoped-dep', '2.0.0', 'BSD-3-Clause', ['lib/esm/index.js']],
+			['dual-package', '3.1.2', 'MIT', ['lib/cjs/index.js']],
+			['inner-dep', '9.9.9', 'ISC', ['build/index.js']],
+		],
+	)
+	const dependency = inventory.packages.find((pkg) => pkg.name === 'dual-package')
 	assert.deepEqual(
 		dependency.legalTexts.map((text) => text.filename),
 		['LICENSE'],
