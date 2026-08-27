@@ -62,9 +62,9 @@ test('analyzes only bundled shipped packages without writing output', async (t) 
 	)
 
 	const inventory = await analyzeShippedLegalInventory(moduleDir)
-	// The project license comes from package.json, the manifest one is replaced by the build
+	// The project is distributed under the manifest license, not the license of its own source
 	assert.deepEqual(inventory.packages.map((pkg) => [pkg.kind, pkg.name, pkg.declaredLicense]).sort(), [
 		['bundled', 'used-package', 'MIT'],
-		['project', 'fixture', 'MIT'],
+		['project', 'fixture', 'AGPL-3.0-only'],
 	])
 })

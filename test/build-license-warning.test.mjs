@@ -9,6 +9,7 @@ const inventory = {
 			kind: 'project',
 			name: 'fixture',
 			declaredLicense: 'AGPL-3.0-only',
+			sourceLicense: 'MIT',
 			packageRoot: '',
 			contributingPaths: new Set(),
 			legalTexts: [],
@@ -33,7 +34,7 @@ test('build rejects incompatible inventory after printing all issues', () => {
 	)
 	assert.match(
 		writes.join(''),
-		/LICENSE ERROR: Your module is licensed as AGPL-3\.0-only, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+		/LICENSE ERROR: Your module is published under AGPL-3\.0-only, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
 	)
 	assert.match(
 		writes.join(''),
@@ -51,6 +52,6 @@ test('build ignore option warns and continues', () => {
 	)
 	assert.match(
 		writes.join(''),
-		/LICENSE WARNING: Your module is licensed as AGPL-3\.0-only, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+		/LICENSE WARNING: Your module is published under AGPL-3\.0-only, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
 	)
 })

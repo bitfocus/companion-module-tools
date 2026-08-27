@@ -14,6 +14,24 @@ More information on this command is available [on the wiki](https://github.com/b
 
 Generate the new format manifest from an old `package.json`.
 
+## Licensing
+
+A module has two licenses, and they are not the same thing:
+
+- `license` in `package.json` is the license of the code you wrote. This must be `MIT`, so module source always stays
+  portable and can be reused anywhere.
+- `license` in `companion/manifest.json` is the license the packaged module is distributed under. A build bundles your
+  code together with its dependencies, so this has to be a license that whole blob can be shipped under.
+
+Your own code stays MIT even when a dependency is copyleft. If you bundle a GPL-3.0 dependency, your source stays MIT
+while the manifest declares `GPL-3.0-only`, because that is what the combined package must be distributed as. Anyone
+reusing your source on its own still gets it under MIT.
+
+The build and check commands validate every bundled and external dependency against the manifest license. Supported
+values are `MIT` (recommended, it can use the most of npm), `GPL-2.0-only` and `GPL-3.0-only`. Dual licensing is not
+supported, and a module which declares no license in its manifest falls back to the one in `package.json`.
+
+Pass `--ignore-license-rules` to report license problems as warnings instead of failing the command.
 
 ## Upgrading from v1.x to v2.0
 
@@ -21,8 +39,8 @@ v2.0 of this library includes some breaking changes to how eslint and prettier h
 
 This change was done for two reasons:
 
-1) Very few modules use eslint, making this extra weight for them for no gain.
-2) Recent versions of yarn do not expose these binaries in a way which is easily callable by modules, requiring tricks to be able to execute them.
+1. Very few modules use eslint, making this extra weight for them for no gain.
+2. Recent versions of yarn do not expose these binaries in a way which is easily callable by modules, requiring tricks to be able to execute them.
 
 To resolve this, you will need to do a `yarn add --dev eslint prettier` in your modules to install the dependencies, and update any scripts to remove the invocation hacks.
 
@@ -42,7 +60,7 @@ If using TypeScript, you should specify a `typescriptRoot`:
 import { generateEslintConfig } from '@companion-module/tools/eslint/config.mjs'
 
 export default generateEslintConfig({
-    enableTypescript: true,
+	enableTypescript: true,
 })
 ```
 

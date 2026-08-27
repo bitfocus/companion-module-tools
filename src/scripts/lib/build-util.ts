@@ -119,7 +119,7 @@ export async function buildPackage<M>(
 	// Copy the manifest, overriding some properties
 	manifestJson.runtime.entrypoint = '../main.js'
 	manifestJson.version = srcPackageJson.version
-	manifestJson.license = srcPackageJson.license
+	// Note: not syncing the license, as source and distrubution could be different licenses.
 	manifestJson.runtime.api = 'nodejs-ipc'
 	manifestJson.runtime.apiVersion = frameworkPackageJson.version
 

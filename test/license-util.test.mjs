@@ -225,10 +225,10 @@ test('collects only positive-byte JavaScript metafile contributors by package', 
 		[
 			{
 				kind: 'project',
-				// From package.json, the manifest license the fixture declares is ignored
+				// From companion/manifest.json, which licenses the packaged module rather than its source
 				name: 'project',
 				version: '1.0.0',
-				declaredLicense: 'MIT',
+				declaredLicense: 'Apache-2.0',
 				contributingPaths: ['src/main.js'],
 			},
 			{

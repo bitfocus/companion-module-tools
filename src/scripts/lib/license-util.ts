@@ -12,6 +12,8 @@ export interface ShippedPackage {
 	name: string
 	version?: string
 	declaredLicense?: string
+	/** Only for the project, the package.json license of its own source, which declaredLicense distributes it under */
+	sourceLicense?: string
 	/** Where recipients can obtain the source of this package, as required by MPL-2.0 and the GPL family */
 	repositoryUrl?: string
 	packageRoot: string
@@ -100,6 +102,19 @@ async function readPackageJson(packageRoot: string): Promise<PackageJson> {
 	return JSON.parse(await readFile(path.join(packageRoot, 'package.json'), 'utf8'))
 }
 
+function asLicenseString(license: unknown): string | undefined {
+	return typeof license === 'string' ? license : undefined
+}
+
+async function readManifestLicense(moduleDir: string): Promise<unknown> {
+	try {
+		const manifest = JSON.parse(await readFile(path.join(moduleDir, 'companion', 'manifest.json'), 'utf8'))
+		return manifest.license
+	} catch {
+		return undefined // Modules without a readable manifest fall back to the package.json license
+	}
+}
+
 async function findPackageRoot(inputPath: string, moduleDir: string): Promise<string | undefined> {
 	const nodeModulesDir = path.join(moduleDir, 'node_modules')
 	let currentDir = path.dirname(inputPath)
@@ -133,7 +148,7 @@ function packageFromJson(kind: ShippedPackageKind, packageRoot: string, packageJ
 		kind,
 		name: packageJson.name ?? path.basename(packageRoot),
 		version: packageJson.version,
-		declaredLicense: typeof packageJson.license === 'string' ? packageJson.license : undefined,
+		declaredLicense: asLicenseString(packageJson.license),
 		repositoryUrl: normalizeRepositoryUrl(packageJson),
 		packageRoot,
 		contributingPaths: new Set(),
@@ -427,6 +442,10 @@ export async function collectMetafilePackages(
 	const packages = new Map<string, ShippedPackage>()
 	const diagnostics: string[] = []
 
+	// The manifest license is what the packaged module is distributed as, which is what its dependencies must fit.
+	// package.json only licenses the module's own source, so it is a fallback for modules not declaring the other.
+	const projectLicense = (await readManifestLicense(resolvedModuleDir)) ?? projectPackageJson.license
+
 	for (const input of getContributingInputs(metafile)) {
 		if (input.startsWith('<')) {
 			diagnostics.push(`Ignoring virtual esbuild input: ${input}`)
@@ -451,8 +470,8 @@ export async function collectMetafilePackages(
 				kind,
 				name: packageJson.name ?? path.basename(packageRoot),
 				version: packageJson.version,
-				// package.json is the source of truth, the build bakes it into the shipped manifest
-				declaredLicense: typeof packageJson.license === 'string' ? packageJson.license : undefined,
+				declaredLicense: asLicenseString(kind === 'project' ? projectLicense : packageJson.license),
+				sourceLicense: kind === 'project' ? asLicenseString(projectPackageJson.license) : undefined,
 				repositoryUrl: normalizeRepositoryUrl(packageJson),
 				packageRoot,
 				contributingPaths: new Set(),

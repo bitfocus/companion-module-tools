@@ -16,7 +16,10 @@ const pkg = (kind, name, version, declaredLicense) => ({
 	contributingPaths: new Set(),
 	legalTexts: [],
 })
-const project = (declaredLicense) => pkg('project', 'project', '1.0.0', declaredLicense)
+const project = (declaredLicense, sourceLicense = 'MIT') => ({
+	...pkg('project', 'project', '1.0.0', declaredLicense),
+	sourceLicense,
+})
 const issues = (...packages) => createLicensePolicyIssues({ diagnostics: [], packages })
 const messages = (...packages) => issues(...packages).map((issue) => issue.message)
 const dependencyMessages = (projectLicense, expression) =>
@@ -182,30 +185,62 @@ test('requires a supported project declared license after trimming', () => {
 	assert.deepEqual(messages(project(' GPL-2.0-only ')), [])
 	assert.match(
 		messages(project('MIT OR ISC'))[0],
-		/Your module is licensed as MIT OR ISC, and dual licensing is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+		/Your module is published under MIT OR ISC, and dual licensing is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
 	)
 	assert.match(
 		messages(project('GPL-2.0'))[0],
-		/Your module is licensed as GPL-2\.0, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+		/Your module is published under GPL-2\.0, which is not supported\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
 	)
 	assert.match(
 		messages(project(undefined))[0],
-		/Your module does not declare a license in package\.json\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
+		/Your module does not declare a license in companion\/manifest\.json\. We recommend MIT for the widest compatibility, but also accept GPL-2\.0-only or GPL-3\.0-only when necessary\./,
 	)
+})
+
+// The module source is licensed separately from the blob it is distributed in
+test('accepts MIT source whatever the module is distributed under', () => {
+	for (const distribution of ['MIT', 'GPL-2.0-only', 'GPL-3.0-only']) {
+		assert.deepEqual(messages(project(distribution, 'MIT')), [], `MIT source under ${distribution}`)
+	}
+})
+
+test('requires module source to stay MIT, even when distributed under the same license', () => {
+	for (const [distribution, source] of [
+		['MIT', 'GPL-3.0-only'],
+		['GPL-3.0-only', 'GPL-3.0-only'],
+		['GPL-2.0-only', 'GPL-2.0-only'],
+		['MIT', 'Apache-2.0'],
+		['MIT', 'MIT OR ISC'],
+	]) {
+		assert.deepEqual(messages(project(distribution, source)), [
+			`Your module source is licensed as ${source} in package.json, but the Companion project requires module source to be MIT so it stays portable. Declare the license the module is distributed under in companion/manifest.json instead.`,
+		])
+	}
+	// project() defaults the source license, so build one carrying no package.json license at all
+	assert.deepEqual(messages(pkg('project', 'project', '1.0.0', 'MIT')), [
+		'Your module source does not declare a license in package.json, but the Companion project requires module source to be MIT so it stays portable.',
+	])
+})
+
+test('reports the distribution and source licenses independently', () => {
+	const result = messages(project('AGPL-3.0-only', 'GPL-3.0-only'))
+	assert.equal(result.length, 2)
+	assert.match(result[0], /published under AGPL-3\.0-only/)
+	assert.match(result[1], /the Companion project requires module source to be MIT/)
 })
 
 test('reports a dual licensed module without explaining dependency ambiguity', () => {
 	assert.equal(
 		messages(project('MIT AND GPL-3.0-only'))[0],
-		'Your module is licensed as MIT AND GPL-3.0-only, and dual licensing is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.',
+		'Your module is published under MIT AND GPL-3.0-only, and dual licensing is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.',
 	)
 	for (const declaration of ['MIT OR GPL-3.0-only', 'MIT AND ISC', '(MIT AND GPL-3.0-only) OR AGPL-3.0-only']) {
 		assert.match(messages(project(declaration))[0], /and dual licensing is not supported\./)
 		assert.doesNotMatch(messages(project(declaration))[0], /licenses may apply|Ask package author/)
 	}
 	// A single unsupported license is not dual licensing, and an unparseable one is reported the same way
-	assert.match(messages(project('AGPL-3.0-only'))[0], /as AGPL-3\.0-only, which is not supported\./)
-	assert.match(messages(project('MIT AND'))[0], /as MIT AND, which is not supported\./)
+	assert.match(messages(project('AGPL-3.0-only'))[0], /published under AGPL-3\.0-only, which is not supported\./)
+	assert.match(messages(project('MIT AND'))[0], /published under MIT AND, which is not supported\./)
 })
 
 test('escapes control characters in displayed declarations', () => {
@@ -243,7 +278,7 @@ test('enforces all issues with deterministic errors and summary', () => {
 		(error) => error instanceof LicensePolicyError,
 	)
 	assert.deepEqual(writes, [
-		'LICENSE ERROR: Your module is licensed as AGPL-3.0-only, which is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.\n',
+		'LICENSE ERROR: Your module is published under AGPL-3.0-only, which is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.\n',
 		'LICENSE ERROR: Dependency zeta@1.0.0 has license declaration GPL-3.0-only which is not compatible with the MIT license policy.\n',
 		'License validation failed with 2 errors.\n',
 		'Not sure what to do about these? Ask in the Bitfocus community Slack, we are happy to help you work out what they mean for your module.\n',
@@ -259,7 +294,7 @@ test('ignore mode warns and returns, including zero issues', () => {
 		),
 	)
 	assert.deepEqual(writes, [
-		'LICENSE WARNING: Your module is licensed as AGPL-3.0-only, which is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.\n',
+		'LICENSE WARNING: Your module is published under AGPL-3.0-only, which is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.\n',
 		'License validation ignored 1 error because --ignore-license-rules was provided.\n',
 	])
 	const emptyWrites = []
@@ -280,7 +315,7 @@ test('deduplicates bundled and external dependency, project first and package so
 	assert.deepEqual(
 		result.map((issue) => issue.message),
 		[
-			'Your module is licensed as AGPL-3.0-only, which is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.',
+			'Your module is published under AGPL-3.0-only, which is not supported. We recommend MIT for the widest compatibility, but also accept GPL-2.0-only or GPL-3.0-only when necessary. Talk to us if you have a reason to use a different license.',
 			'Dependency alpha@1.0.0 has license declaration AGPL-3.0-only which is not compatible with the MIT license policy.',
 			'Dependency zeta@1.0.0 has license declaration GPL-3.0-only which is not compatible with the MIT license policy.',
 		],

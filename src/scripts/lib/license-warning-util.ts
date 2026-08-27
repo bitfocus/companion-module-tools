@@ -179,7 +179,7 @@ function issue(packageInfo: ShippedPackageLegalRecord, message: string): License
 	}
 }
 
-/** Resolve the license the module declares for itself, which selects the policy applied to its dependencies */
+/** Resolve the license the packaged module is distributed under, which selects the policy applied to its dependencies */
 export function resolveProjectLicense(inventory: LegalInventory): {
 	declaration: string
 	license: ProjectLicense | undefined
@@ -189,12 +189,31 @@ export function resolveProjectLicense(inventory: LegalInventory): {
 	return { declaration, license: isProjectLicense(declaration) ? declaration : undefined }
 }
 
-function createProjectIssue(packageInfo: ShippedPackageLegalRecord): LicensePolicyIssue | undefined {
+// For now module source must be MIT, so it stays portable whatever the packaged module is distributed as. Relaxing
+// this means checking the source license is compatible with the distribution license instead of equal to this one.
+const REQUIRED_SOURCE_LICENSE = 'MIT'
+
+function createSourceLicenseIssue(packageInfo: ShippedPackageLegalRecord): LicensePolicyIssue | undefined {
+	const sourceLicense = packageInfo.sourceLicense?.trim() ?? ''
+	if (sourceLicense === REQUIRED_SOURCE_LICENSE) return undefined
+	if (!sourceLicense) {
+		return issue(
+			packageInfo,
+			`Your module source does not declare a license in package.json, but the Companion project requires module source to be ${REQUIRED_SOURCE_LICENSE} so it stays portable.`,
+		)
+	}
+	return issue(
+		packageInfo,
+		`Your module source is licensed as ${displayDeclaration(sourceLicense)} in package.json, but the Companion project requires module source to be ${REQUIRED_SOURCE_LICENSE} so it stays portable. Declare the license the module is distributed under in companion/manifest.json instead.`,
+	)
+}
+
+function createDistributionLicenseIssue(packageInfo: ShippedPackageLegalRecord): LicensePolicyIssue | undefined {
 	const declaration = normalizedDeclaration(packageInfo)
 	if (!declaration) {
 		return issue(
 			packageInfo,
-			`Your module does not declare a license in package.json. ${supportedProjectLicenseAdvice()} Talk to us if you have a reason to use a different license.`,
+			`Your module does not declare a license in companion/manifest.json. ${supportedProjectLicenseAdvice()} Talk to us if you have a reason to use a different license.`,
 		)
 	}
 	if (isProjectLicense(declaration)) return undefined
@@ -208,7 +227,14 @@ function createProjectIssue(packageInfo: ShippedPackageLegalRecord): LicensePoli
 	}
 	return issue(
 		packageInfo,
-		`Your module is licensed as ${displayDeclaration(declaration)}, ${reason}. ${supportedProjectLicenseAdvice()} Talk to us if you have a reason to use a different license.`,
+		`Your module is published under ${displayDeclaration(declaration)}, ${reason}. ${supportedProjectLicenseAdvice()} Talk to us if you have a reason to use a different license.`,
+	)
+}
+
+/** The distribution and source licenses are declared in different files, and are reported independently */
+function createProjectIssues(packageInfo: ShippedPackageLegalRecord): LicensePolicyIssue[] {
+	return [createDistributionLicenseIssue(packageInfo), createSourceLicenseIssue(packageInfo)].filter(
+		(projectIssue) => projectIssue !== undefined,
 	)
 }
 
@@ -229,8 +255,7 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 		seen.add(identity)
 
 		if (packageInfo.kind === 'project') {
-			const projectIssue = createProjectIssue(packageInfo)
-			if (projectIssue) result.push(projectIssue)
+			result.push(...createProjectIssues(packageInfo))
 			continue
 		}
 
