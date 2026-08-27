@@ -20,8 +20,18 @@ const messages = (...packages) => issues(...packages).map((issue) => issue.messa
 
 for (const expression of [
 	'MIT',
+	'MIT-0',
 	'ISC',
 	'BSD-2-Clause',
+	'BSD-3-Clause',
+	'Apache-2.0',
+	'0BSD',
+	'CC0-1.0',
+	'Unlicense',
+	'BlueOak-1.0.0',
+	'CC-BY-3.0',
+	'CC-BY-4.0',
+	'Python-2.0',
 	'MIT AND ISC',
 	'MIT OR ISC',
 	'MIT OR GPL-3.0-only',
@@ -35,9 +45,9 @@ for (const expression of [
 for (const expression of [
 	'GPL-3.0-only',
 	'MIT AND GPL-3.0-only',
-	'MIT AND Apache-2.0',
-	'GPL-3.0-only OR Apache-2.0',
-	'(MIT AND GPL-3.0-only) OR Apache-2.0',
+	'MIT AND AGPL-3.0-only',
+	'GPL-3.0-only OR AGPL-3.0-only',
+	'(MIT AND GPL-3.0-only) OR AGPL-3.0-only',
 	'MIT WITH LLVM-exception',
 	'MIT+',
 	'ISC+',
@@ -62,7 +72,7 @@ test('distinguishes missing and malformed dependency declarations', () => {
 })
 
 test('explains incompatible AND obligations, including nested incompatible OR branches', () => {
-	for (const expression of ['MIT AND GPL-3.0-only', '(MIT AND GPL-3.0-only) OR Apache-2.0']) {
+	for (const expression of ['MIT AND GPL-3.0-only', '(MIT AND GPL-3.0-only) OR AGPL-3.0-only']) {
 		assert.equal(
 			messages(pkg('external', 'dep', '1.0.0', expression))[0],
 			`Dependency dep@1.0.0 has incompatible license declaration ${expression}. Both licenses may apply, making this declaration ambiguous and incompatible. Ask package author to use OR if either license may be chosen, or clarify package licensing.`,
@@ -97,7 +107,7 @@ test('explains ambiguous incompatible project AND declarations without changing 
 	assert.doesNotMatch(messages(pkg('project', 'project', '1.0.0', 'MIT OR GPL-3.0-only'))[0], /both licenses may apply/)
 	assert.doesNotMatch(messages(pkg('project', 'project', '1.0.0', 'MIT AND ISC'))[0], /both licenses may apply/)
 	assert.match(
-		messages(pkg('project', 'project', '1.0.0', '(MIT AND GPL-3.0-only) OR Apache-2.0'))[0],
+		messages(pkg('project', 'project', '1.0.0', '(MIT AND GPL-3.0-only) OR AGPL-3.0-only'))[0],
 		/\. Both licenses may apply, making this declaration ambiguous and incompatible\. Ask package author to use OR if either license may be chosen, or clarify package licensing\.$/,
 	)
 })
@@ -112,11 +122,11 @@ test('escapes control characters in displayed declarations', () => {
 test('reports same name/version dependencies with distinct declarations and deterministic order', () => {
 	const packages = [
 		pkg('external', 'dep', '1.0.0', 'GPL-3.0-only'),
-		pkg('bundled', 'dep', '1.0.0', 'Apache-2.0'),
-		pkg('external', 'dep', '1.0.0', 'Apache-2.0'),
+		pkg('bundled', 'dep', '1.0.0', 'AGPL-3.0-only'),
+		pkg('external', 'dep', '1.0.0', 'AGPL-3.0-only'),
 	]
 	const expected = [
-		'Dependency dep@1.0.0 has incompatible license declaration Apache-2.0.',
+		'Dependency dep@1.0.0 has incompatible license declaration AGPL-3.0-only.',
 		'Dependency dep@1.0.0 has incompatible license declaration GPL-3.0-only.',
 	]
 	assert.deepEqual(messages(...packages), expected)
@@ -169,15 +179,15 @@ test('ignore mode warns and returns, including zero issues', () => {
 test('deduplicates bundled and external dependency, project first and package sorted', () => {
 	const result = issues(
 		pkg('external', 'zeta', '1.0.0', 'GPL-3.0-only'),
-		pkg('bundled', 'alpha', '1.0.0', 'Apache-2.0'),
-		pkg('external', 'alpha', '1.0.0', 'Apache-2.0'),
+		pkg('bundled', 'alpha', '1.0.0', 'AGPL-3.0-only'),
+		pkg('external', 'alpha', '1.0.0', 'AGPL-3.0-only'),
 		pkg('project', 'project', '1.0.0', 'GPL-3.0-only'),
 	)
 	assert.deepEqual(
 		result.map((issue) => issue.message),
 		[
 			'Your module must be licensed under MIT; found GPL-3.0-only.',
-			'Dependency alpha@1.0.0 has incompatible license declaration Apache-2.0.',
+			'Dependency alpha@1.0.0 has incompatible license declaration AGPL-3.0-only.',
 			'Dependency zeta@1.0.0 has incompatible license declaration GPL-3.0-only.',
 		],
 	)
