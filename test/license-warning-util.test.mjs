@@ -6,6 +6,8 @@ import {
 	LicensePolicyError,
 	SUPPORTED_PROJECT_LICENSES,
 } from '../dist/scripts/lib/license-warning-util.js'
+import { CORRECTED_PACKAGE_LICENSES } from '../dist/scripts/lib/known-package-licenses.js'
+import parse from 'spdx-expression-parse'
 
 const pkg = (kind, name, version, declaredLicense) => ({
 	kind,
@@ -370,4 +372,29 @@ test('keeps a valid SPDX expression on the strict path with its original message
 	])
 	// A lenient reparse must not smuggle in an exception we would otherwise reject
 	assert.match(dependencyMessages('MIT', 'MIT WITH LLVM-exception')[0], /not compatible with the MIT license policy/)
+})
+
+// A correction replaces a declaration which is not valid SPDX with what the published license text actually is
+test('applies a hardcoded correction to an unparseable declaration', () => {
+	const [name, version] = Object.keys(CORRECTED_PACKAGE_LICENSES)[0].split('@')
+	assert.deepEqual(messages(project('MIT'), pkg('external', name, version, 'BSD')), [])
+	// Only that exact version is corrected
+	assert.match(messages(project('MIT'), pkg('external', name, `${version}-other`, 'BSD'))[0], /not a valid SPDX/)
+	// Only that exact package is corrected
+	assert.match(messages(project('MIT'), pkg('external', 'other-pkg', version, 'BSD'))[0], /not a valid SPDX/)
+})
+
+test('a correction can never launder a license the package validly declares', () => {
+	const [name, version] = Object.keys(CORRECTED_PACKAGE_LICENSES)[0].split('@')
+	// The declaration parses as valid SPDX, so the correction is not consulted at all
+	assert.match(
+		messages(project('MIT'), pkg('external', name, version, 'AGPL-3.0-only'))[0],
+		/license declaration AGPL-3\.0-only which is not compatible with the MIT license policy\./,
+	)
+})
+
+test('every corrected license is itself valid SPDX', () => {
+	for (const [key, license] of Object.entries(CORRECTED_PACKAGE_LICENSES)) {
+		assert.doesNotThrow(() => parse(license), `${key} corrected to ${license}`)
+	}
 })
