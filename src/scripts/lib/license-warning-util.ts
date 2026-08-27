@@ -56,10 +56,30 @@ const GPL3_DEPENDENCY_LICENSES = [
 	'GPL-3.0', // Deprecated SPDX id for GPL-3.0-only, still widely declared on npm
 ]
 
+// The LGPL families split by which GPL version their relicensing clause can reach. LGPL-2.x section 3 offers "version
+// 2 of the ordinary GPL or any later version", so it suits either GPL policy, while LGPL-3.0 only reaches GPL-3.0.
+const LGPL2_DEPENDENCY_LICENSES = [
+	'LGPL-2.0-only',
+	'LGPL-2.0-or-later',
+	'LGPL-2.0', // Deprecated SPDX id for LGPL-2.0-only, still widely declared on npm
+	'LGPL-2.1-only',
+	'LGPL-2.1-or-later',
+	'LGPL-2.1', // Deprecated SPDX id for LGPL-2.1-only
+]
+
+const LGPL3_DEPENDENCY_LICENSES = [
+	'LGPL-3.0-only',
+	'LGPL-3.0-or-later',
+	'LGPL-3.0', // Deprecated SPDX id for LGPL-3.0-only
+]
+
 // Each policy pins the combined work to a single GPL version, so no mix of allowed dependencies can end up
 // unlicensable. Offering GPL-2.0-or-later would break that, a GPL-2.0-only and a GPL-3.0-only dependency could then
 // both be accepted while no version satisfies both.
-const PROJECT_LICENSE_POLICIES: Record<ProjectLicense, { allowedDependencyLicenses: Set<string> }> = {
+const PROJECT_LICENSE_POLICIES: Record<
+	ProjectLicense,
+	{ allowedDependencyLicenses: Set<string>; externalOnlyLicenses: Set<string> }
+> = {
 	MIT: {
 		allowedDependencyLicenses: new Set([
 			...PERMISSIVE_DEPENDENCY_LICENSES,
@@ -67,21 +87,36 @@ const PROJECT_LICENSE_POLICIES: Record<ProjectLicense, { allowedDependencyLicens
 			'CC-BY-3.0',
 			'CC-BY-4.0',
 			'MPL-2.0', // File level copyleft, allows bundling if source is available (links bundled LICENSE)
-			// LGPL: in theory acceptable, but applications must be distributed under terms that permit reverse engineering for debugging
 		]),
+		// An MIT bundle cannot offer the relinking static linking would require, but the LGPL is written to let a
+		// work under any terms use the library as a separate one, so every LGPL version is fine as an external
+		externalOnlyLicenses: new Set([...LGPL2_DEPENDENCY_LICENSES, ...LGPL3_DEPENDENCY_LICENSES]),
 	},
 	// Apache-2.0 and the CC-BY licenses are deliberately absent, they cannot be combined with GPL-2.0-only
 	'GPL-2.0-only': {
-		allowedDependencyLicenses: new Set([...PERMISSIVE_DEPENDENCY_LICENSES, ...GPL2_DEPENDENCY_LICENSES, 'MPL-2.0']),
+		allowedDependencyLicenses: new Set([
+			...PERMISSIVE_DEPENDENCY_LICENSES,
+			...GPL2_DEPENDENCY_LICENSES,
+			// Section 3 relicenses these to GPL-2.0, so the bundle stays distributable under this policy
+			...LGPL2_DEPENDENCY_LICENSES,
+			'MPL-2.0',
+		]),
+		// LGPL-3.0 is absent entirely rather than external only. It is GPL-3.0 plus permissions, so it carries terms
+		// GPL-2.0 section 6 forbids adding, and linking still forms a combined work whichever way it is shipped.
+		externalOnlyLicenses: new Set(),
 	},
 	'GPL-3.0-only': {
 		allowedDependencyLicenses: new Set([
 			...PERMISSIVE_DEPENDENCY_LICENSES,
 			...GPL3_DEPENDENCY_LICENSES,
 			'GPL-2.0-or-later', // GPL-2.0-only is absent, only the "or later" form can be taken to GPL-3.0
+			// Both families reach GPL-3.0, the 2.x one through its "or any later version" offer
+			...LGPL2_DEPENDENCY_LICENSES,
+			...LGPL3_DEPENDENCY_LICENSES,
 			'Apache-2.0',
 			'MPL-2.0',
 		]),
+		externalOnlyLicenses: new Set(),
 	},
 }
 
@@ -324,7 +359,13 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 	const seen = new Set<string>()
 
 	const projectLicense = resolveProjectLicense(inventory).license ?? FALLBACK_PROJECT_LICENSE
-	const allowedLicenses = PROJECT_LICENSE_POLICIES[projectLicense].allowedDependencyLicenses
+	const policy = PROJECT_LICENSE_POLICIES[projectLicense]
+	const bundledLicenses = policy.allowedDependencyLicenses
+	// Identical to the bundled set where the policy has nothing which only works as an external, so that no issue is
+	// ever reported as fixable by externalising it when externalising would not in fact help
+	const externalLicenses = policy.externalOnlyLicenses.size
+		? new Set([...bundledLicenses, ...policy.externalOnlyLicenses])
+		: bundledLicenses
 
 	for (const packageInfo of [...inventory.packages].sort(packageSort)) {
 		const declaration = normalizedDeclaration(packageInfo)
@@ -361,8 +402,21 @@ export function createLicensePolicyIssues(inventory: LegalInventory): LicensePol
 			continue
 		}
 
+		const allowedLicenses = packageInfo.kind === 'external' ? externalLicenses : bundledLicenses
 		const evaluation = evaluate(parsed.node, allowedLicenses)
 		if (evaluation.allowed) continue
+
+		// Only reachable for a bundled package, externals are already evaluated against the wider set
+		if (evaluate(parsed.node, externalLicenses).allowed) {
+			result.push(
+				issue(
+					packageInfo,
+					`Dependency ${packageLabel(packageInfo)} has license declaration ${displayDeclaration(declaration)} which may only be shipped as an external dependency, not built into the bundle. Add it to the externals in build-config.cjs so it is installed alongside the module and loaded at runtime.`,
+				),
+			)
+			continue
+		}
+
 		if (!parsed.strict) {
 			// Reaching here means no branch we could recognise was allowed, so the unrecognised ones are the problem
 			result.push(
