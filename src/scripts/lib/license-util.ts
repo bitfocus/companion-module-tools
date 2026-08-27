@@ -106,11 +106,12 @@ async function findPackageRoot(inputPath: string, moduleDir: string): Promise<st
 
 	while (currentDir.startsWith(`${nodeModulesDir}${path.sep}`)) {
 		try {
-			await readFile(path.join(currentDir, 'package.json'))
-			return currentDir
+			// Packages mark subdirectories with a package.json carrying only a type, the real root declares a version
+			if (typeof (await readPackageJson(currentDir)).version === 'string') return currentDir
 		} catch {
-			currentDir = path.dirname(currentDir)
+			// An unreadable or missing package.json cannot identify the package, so keep walking up
 		}
+		currentDir = path.dirname(currentDir)
 	}
 
 	return undefined

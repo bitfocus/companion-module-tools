@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import {
+	analyzeShippedLegalInventory,
 	collectInstalledPackages,
 	collectMetafilePackages,
 	collectPackageLegalMaterial,
@@ -45,6 +46,43 @@ async function createProjectFixture() {
 	await writeFile(path.join(projectDir, 'node_modules', '@scope', 'nested', 'lib', 'index.js'), 'export {}')
 	return projectDir
 }
+
+test('attributes files to the package root, not a nested module type marker', async (t) => {
+	const moduleDir = await mkdtemp(path.join(tmpdir(), 'license-nested-marker-'))
+	t.after(() => rm(moduleDir, { recursive: true, force: true }))
+	await writeJson(path.join(moduleDir, 'package.json'), {
+		name: 'fixture',
+		version: '1.0.0',
+		main: 'src/main.js',
+		license: 'MIT',
+	})
+	await writeJson(path.join(moduleDir, 'companion', 'manifest.json'), {})
+	await mkdir(path.join(moduleDir, 'src'), { recursive: true })
+	await writeFile(path.join(moduleDir, 'src', 'main.js'), "import { used } from 'dual-package'; console.log(used)")
+
+	// Dual published packages mark their output directories with a package.json carrying only a name and type
+	const packageDir = path.join(moduleDir, 'node_modules', 'dual-package')
+	await writeJson(path.join(packageDir, 'package.json'), {
+		name: 'dual-package',
+		version: '3.1.2',
+		license: 'MIT',
+		main: 'lib/cjs/index.js',
+	})
+	await writeFile(path.join(packageDir, 'LICENSE'), 'dual package license\n')
+	await writeJson(path.join(packageDir, 'lib', 'cjs', 'package.json'), { name: 'dual-package', type: 'commonjs' })
+	await writeFile(path.join(packageDir, 'lib', 'cjs', 'index.js'), 'exports.used = true')
+
+	const inventory = await analyzeShippedLegalInventory(moduleDir)
+	const dependency = inventory.packages.find((pkg) => pkg.kind === 'bundled')
+	assert.equal(dependency.name, 'dual-package')
+	assert.equal(dependency.version, '3.1.2')
+	assert.equal(dependency.declaredLicense, 'MIT')
+	assert.deepEqual([...dependency.contributingPaths], ['lib/cjs/index.js'])
+	assert.deepEqual(
+		dependency.legalTexts.map((text) => text.filename),
+		['LICENSE'],
+	)
+})
 
 test('normalizes repository declarations into a source url', () => {
 	const url = 'https://github.com/example/repo'
