@@ -21,7 +21,21 @@ export class LicensePolicyError extends Error {
 	}
 }
 
-const ALLOWED_DEPENDENCY_LICENSES = new Set(['MIT', 'ISC', 'BSD-2-Clause'])
+const ALLOWED_DEPENDENCY_LICENSES = new Set([
+	'MIT',
+	'MIT-0',
+	'ISC',
+	'BSD-2-Clause',
+	'BSD-3-Clause',
+	'Apache-2.0',
+	'0BSD',
+	'CC0-1.0',
+	'Unlicense',
+	'BlueOak-1.0.0',
+	'CC-BY-3.0',
+	'CC-BY-4.0',
+	'Python-2.0',
+])
 
 function evaluate(node: ExpressionNode): Evaluation {
 	if ('license' in node)
