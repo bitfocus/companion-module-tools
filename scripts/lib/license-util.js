@@ -1,5 +1,6 @@
 import { lstat, readdir, realpath, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { knownPackageLicense } from './known-package-licenses.js'
 
@@ -546,11 +547,38 @@ export async function createLegalInventory(packages) {
 }
 
 /**
+ * The names a module's build-config.cjs declares as externals. Only the object form is read, matching what the build
+ * itself installs into the package as dependencies.
+ *
+ * @param {string} moduleDir
+ * @returns {string[]}
+ */
+export function readExternalNames(moduleDir) {
+	let buildConfig
+	try {
+		buildConfig = createRequire(path.join(moduleDir, 'package.json'))(path.join(moduleDir, 'build-config.cjs'))
+	} catch {
+		return [] // Modules without a build-config.cjs bundle everything
+	}
+
+	const externals = Array.isArray(buildConfig.externals)
+		? buildConfig.externals
+		: buildConfig.externals
+			? [buildConfig.externals]
+			: []
+	const names = []
+	for (const group of externals) {
+		if (group && typeof group === 'object') names.push(...Object.keys(group))
+	}
+	return names
+}
+
+/**
  * @param {string} moduleDir
  * @returns {Promise<LegalInventory>}
  */
 export async function analyzeShippedLegalInventory(moduleDir) {
-	const shippedPackages = await collectProductionPackages(moduleDir)
+	const shippedPackages = await collectProductionPackages(moduleDir, readExternalNames(moduleDir))
 	const inventory = await createLegalInventory(shippedPackages.packages)
 	return { ...inventory, diagnostics: [...shippedPackages.diagnostics, ...inventory.diagnostics] }
 }
@@ -562,9 +590,10 @@ export async function analyzeShippedLegalInventory(moduleDir) {
  * tree-shaken away is still reported.
  *
  * @param {string} moduleDir
+ * @param {string[]} [externalNames] Names the build treats as externals, which ship beside the bundle rather than in it
  * @returns {Promise<ShippedPackageCollection>}
  */
-export async function collectProductionPackages(moduleDir) {
+export async function collectProductionPackages(moduleDir, externalNames = []) {
 	const resolvedModuleDir = await realpath(moduleDir)
 	const projectPackageJson = await readPackageJson(resolvedModuleDir)
 	/** @type {ShippedPackage[]} */
@@ -587,32 +616,66 @@ export async function collectProductionPackages(moduleDir) {
 		contributingPaths: new Set(),
 	})
 
+	const externalNameSet = new Set(externalNames)
 	const visited = new Set([resolvedModuleDir])
-	let queue = [{ dir: resolvedModuleDir, packageJson: projectPackageJson }]
-	while (queue.length) {
-		/** @type {{ dir: string, packageJson: PackageJson }[]} */
-		const nextQueue = []
-		for (const entry of queue) {
-			for (const dependency of dependencyNames(entry.packageJson)) {
-				const packageRoot = await resolvePackageDir(entry.dir, dependency.name)
-				if (!packageRoot) {
-					if (!dependency.optional) {
-						diagnostics.push(
-							`Ignoring dependency which is not installed: ${dependency.name} (required by ${entry.packageJson.name ?? entry.dir})`,
-						)
-					}
-					continue
-				}
-				if (visited.has(packageRoot)) continue
-				visited.add(packageRoot)
+	/** @type {{ dir: string, packageJson: PackageJson }[]} */
+	const deferredExternals = []
 
-				const packageJson = await readPackageJson(packageRoot)
-				packages.push(packageFromJson('bundled', packageRoot, packageJson))
-				nextQueue.push({ dir: packageRoot, packageJson })
+	/**
+	 * @param {ShippedPackageKind} kind
+	 * @param {{ dir: string, packageJson: PackageJson }[]} roots
+	 * @param {boolean} stopAtExternals
+	 * @returns {Promise<void>}
+	 */
+	async function walk(kind, roots, stopAtExternals) {
+		let queue = roots
+		while (queue.length) {
+			/** @type {{ dir: string, packageJson: PackageJson }[]} */
+			const nextQueue = []
+			for (const entry of queue) {
+				for (const dependency of dependencyNames(entry.packageJson)) {
+					const packageRoot = await resolvePackageDir(entry.dir, dependency.name)
+					if (!packageRoot) {
+						if (!dependency.optional) {
+							diagnostics.push(
+								`Ignoring dependency which is not installed: ${dependency.name} (required by ${entry.packageJson.name ?? entry.dir})`,
+							)
+						}
+						continue
+					}
+					if (visited.has(packageRoot)) continue
+
+					const packageJson = await readPackageJson(packageRoot)
+					// The bundler externalises a name wherever it is required, so an external and everything below it
+					// is installed beside the bundle rather than built into it. Deferred rather than taken now, as a
+					// package an external depends on may still be reachable by a path which does bundle it.
+					if (stopAtExternals && externalNameSet.has(dependency.name)) {
+						deferredExternals.push({ dir: packageRoot, packageJson })
+						continue
+					}
+
+					visited.add(packageRoot)
+					packages.push(packageFromJson(kind, packageRoot, packageJson))
+					nextQueue.push({ dir: packageRoot, packageJson })
+				}
 			}
+			queue = nextQueue
 		}
-		queue = nextQueue
 	}
+
+	// What the bundler builds into main.js, stopping wherever an external takes over
+	await walk('bundled', [{ dir: resolvedModuleDir, packageJson: projectPackageJson }], true)
+
+	/** @type {{ dir: string, packageJson: PackageJson }[]} */
+	const externalRoots = []
+	for (const root of deferredExternals) {
+		if (visited.has(root.dir)) continue // Already reached by a path which bundles it, which is the stricter answer
+		visited.add(root.dir)
+		packages.push(packageFromJson('external', root.dir, root.packageJson))
+		externalRoots.push(root)
+	}
+	// The externals and their own dependencies, which are installed alongside the module and loaded at runtime
+	await walk('external', externalRoots, false)
 
 	return { packages, diagnostics }
 }

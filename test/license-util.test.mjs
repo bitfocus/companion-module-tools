@@ -7,6 +7,7 @@ import { KNOWN_PACKAGE_LICENSES } from '../scripts/lib/known-package-licenses.js
 import {
 	analyzeShippedLegalInventory,
 	collectProductionPackages,
+	readExternalNames,
 	collectInstalledPackages,
 	collectPackageLegalMaterial,
 	createLegalInventory,
@@ -516,4 +517,87 @@ test('builds a whole inventory from the dependency tree', async (t) => {
 	assert.match(renderLicenseFile(inventory), /direct license/)
 	// The packages which ship no license file at all are reported rather than silently contributing nothing
 	assert.deepEqual(inventory.diagnostics.filter((d) => d.startsWith('No license file')).length, 3)
+})
+
+async function createExternalsFixture() {
+	const workspaceDir = await mkdtemp(path.join(tmpdir(), 'license-externals-'))
+	const moduleDir = path.join(workspaceDir, 'module')
+	await writeJson(path.join(moduleDir, 'package.json'), {
+		name: 'project',
+		version: '1.0.0',
+		license: 'MIT',
+		dependencies: { 'native-lib': '^1.0.0', bundled: '^1.0.0' },
+	})
+	await writeJson(path.join(moduleDir, 'companion', 'manifest.json'), { license: 'MIT' })
+	// native-lib is externalised, so it and its own dependencies ship beside the bundle
+	await writeJson(path.join(moduleDir, 'node_modules', 'native-lib', 'package.json'), {
+		name: 'native-lib',
+		version: '1.0.0',
+		license: 'LGPL-3.0-or-later',
+		dependencies: { 'native-dep': '^1.0.0', shared: '^1.0.0' },
+	})
+	await writeJson(path.join(moduleDir, 'node_modules', 'native-dep', 'package.json'), {
+		name: 'native-dep',
+		version: '1.0.0',
+		license: 'MIT',
+	})
+	// shared is reached both through the external and through bundled code, so it is bundled
+	await writeJson(path.join(moduleDir, 'node_modules', 'bundled', 'package.json'), {
+		name: 'bundled',
+		version: '1.0.0',
+		license: 'MIT',
+		dependencies: { shared: '^1.0.0' },
+	})
+	await writeJson(path.join(moduleDir, 'node_modules', 'shared', 'package.json'), {
+		name: 'shared',
+		version: '1.0.0',
+		license: 'MIT',
+	})
+	return { workspaceDir, moduleDir }
+}
+
+test('classifies externals and their dependencies as shipping beside the bundle', async (t) => {
+	const { workspaceDir, moduleDir } = await createExternalsFixture()
+	t.after(() => rm(workspaceDir, { recursive: true, force: true }))
+
+	const collection = await collectProductionPackages(moduleDir, ['native-lib'])
+	assert.deepEqual(
+		collection.packages.map((pkg) => [pkg.name, pkg.kind]).sort(),
+		[
+			['bundled', 'bundled'],
+			['native-dep', 'external'],
+			['native-lib', 'external'],
+			['project', 'project'],
+			// Reachable without crossing an external, so it really is built into the bundle
+			['shared', 'bundled'],
+		].sort(),
+	)
+})
+
+test('treats every package as bundled when nothing is declared external', async (t) => {
+	const { workspaceDir, moduleDir } = await createExternalsFixture()
+	t.after(() => rm(workspaceDir, { recursive: true, force: true }))
+
+	const collection = await collectProductionPackages(moduleDir)
+	assert.deepEqual(
+		collection.packages.filter((pkg) => pkg.kind === 'external'),
+		[],
+	)
+	assert.equal(collection.packages.length, 5)
+})
+
+test('reads the externals a module declares in build-config.cjs', async (t) => {
+	const { workspaceDir, moduleDir } = await createExternalsFixture()
+	t.after(() => rm(workspaceDir, { recursive: true, force: true }))
+
+	assert.deepEqual(readExternalNames(moduleDir), [], 'no build-config.cjs')
+	await writeFile(
+		path.join(moduleDir, 'build-config.cjs'),
+		"module.exports = { externals: [{ 'native-lib': 'commonjs2 native-lib' }] }\n",
+	)
+	assert.deepEqual(readExternalNames(moduleDir), ['native-lib'])
+
+	// An LGPL external is only acceptable because the inventory knows it is not bundled
+	const inventory = await analyzeShippedLegalInventory(moduleDir)
+	assert.equal(inventory.packages.find((pkg) => pkg.name === 'native-lib').kind, 'external')
 })

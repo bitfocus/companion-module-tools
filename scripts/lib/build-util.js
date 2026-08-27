@@ -241,7 +241,8 @@ export async function buildPackage(frameworkPackageName, validateManifest, modul
 		}
 	}
 
-	const shippedPackages = await collectProductionPackages(moduleDir)
+	// The externals the build just resolved are exactly the names the bundler kept out of main.js
+	const shippedPackages = await collectProductionPackages(moduleDir, Object.keys(packageJson.dependencies))
 	if (Object.keys(packageJson.dependencies).length) {
 		// The externals tree yarn just installed is the exact set which ships alongside the bundle
 		shippedPackages.packages.push(...(await collectInstalledPackages(path.join(packageBaseDir, 'node_modules'))))

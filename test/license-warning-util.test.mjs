@@ -59,8 +59,6 @@ for (const expression of [
 for (const expression of [
 	'GPL-3.0-only',
 	'GPL-2.0-only',
-	'LGPL-2.1-only',
-	'LGPL-3.0-only',
 	'MIT AND GPL-3.0-only',
 	'MIT AND AGPL-3.0-only',
 	'GPL-3.0-only OR AGPL-3.0-only',
@@ -101,9 +99,6 @@ for (const expression of [
 	'CC-BY-4.0',
 	'GPL-3.0-only',
 	'GPL-3.0-or-later',
-	'LGPL-2.1-only',
-	'LGPL-2.1-or-later',
-	'LGPL-3.0-only',
 	'AGPL-3.0-only',
 	'MIT AND Apache-2.0',
 ]) {
@@ -131,7 +126,8 @@ for (const expression of [
 }
 
 // GPL-2.0-only cannot be taken to GPL-3.0, unlike its "or later" form
-for (const expression of ['GPL-2.0-only', 'GPL-2.0', 'CC-BY-4.0', 'AGPL-3.0-only', 'LGPL-2.1-only']) {
+// LGPL is deliberately absent from these lists, it is allowed or not depending on whether the package is bundled
+for (const expression of ['GPL-2.0-only', 'GPL-2.0', 'CC-BY-4.0', 'AGPL-3.0-only']) {
 	test(`rejects dependency expression ${expression} for a GPL-3.0-only module`, () =>
 		assert.match(dependencyMessages('GPL-3.0-only', expression)[0], /GPL-3\.0-only license policy/))
 }
@@ -420,6 +416,74 @@ test('every known package license is understood by the policy', () => {
 	for (const [key, license] of Object.entries(KNOWN_PACKAGE_LICENSES)) {
 		assert.deepEqual(dependencyMessages('MIT', license), [], `${key} declared as ${license}`)
 	}
+})
+
+// Bundling LGPL is static linking, allowed only where the library's own relicensing clause can put the whole
+// bundle under the project license. Shipping it as a separate package is the shared library route instead.
+const LGPL2 = ['LGPL-2.0-only', 'LGPL-2.1-only', 'LGPL-2.1-or-later', 'LGPL-2.1']
+const LGPL3 = ['LGPL-3.0-only', 'LGPL-3.0-or-later', 'LGPL-3.0']
+
+// An MIT bundle cannot offer relinking, but the LGPL lets a work under any terms use the library as a separate one
+for (const expression of [...LGPL2, ...LGPL3]) {
+	test(`allows ${expression} for an MIT module only as an external`, () => {
+		assert.deepEqual(messages(project('MIT'), pkg('external', 'dep', '1.0.0', expression)), [])
+		assert.deepEqual(messages(project('MIT'), pkg('bundled', 'dep', '1.0.0', expression)), [
+			`Dependency dep@1.0.0 has license declaration ${expression} which may only be shipped as an external dependency, not built into the bundle. Add it to the externals in build-config.cjs so it is installed alongside the module and loaded at runtime.`,
+		])
+	})
+}
+
+// LGPL-2.x section 3 offers GPL v2 or any later version, so either GPL policy can bundle it outright
+for (const expression of LGPL2) {
+	test(`allows ${expression} bundled or external for either GPL module`, () => {
+		for (const projectLicense of ['GPL-2.0-only', 'GPL-3.0-only']) {
+			for (const kind of ['bundled', 'external']) {
+				assert.deepEqual(
+					messages(project(projectLicense), pkg(kind, 'dep', '1.0.0', expression)),
+					[],
+					`${expression} ${kind} under ${projectLicense}`,
+				)
+			}
+		}
+	})
+}
+
+for (const expression of LGPL3) {
+	test(`allows ${expression} bundled or external for a GPL-3.0-only module`, () => {
+		for (const kind of ['bundled', 'external']) {
+			assert.deepEqual(messages(project('GPL-3.0-only'), pkg(kind, 'dep', '1.0.0', expression)), [])
+		}
+	})
+
+	// LGPL-3.0 is GPL-3.0 plus permissions, so it carries terms GPL-2.0 section 6 forbids adding. Linking forms a
+	// combined work either way, so externalising it is not a fix and must not be suggested as one.
+	test(`rejects ${expression} for a GPL-2.0-only module however it ships`, () => {
+		for (const kind of ['bundled', 'external']) {
+			const result = messages(project('GPL-2.0-only'), pkg(kind, 'dep', '1.0.0', expression))
+			assert.equal(result.length, 1, `${expression} ${kind}`)
+			assert.match(result[0], /not compatible with the GPL-2\.0-only license policy/)
+			assert.doesNotMatch(result[0], /external dependency/)
+		}
+	})
+}
+
+test('does not offer the external route for a license which is disallowed either way', () => {
+	for (const expression of ['AGPL-3.0-only', 'GPL-3.0-only']) {
+		for (const kind of ['bundled', 'external']) {
+			const result = messages(project('MIT'), pkg(kind, 'dep', '1.0.0', expression))
+			assert.equal(result.length, 1, `${expression} as ${kind}`)
+			assert.match(result[0], /not compatible with the MIT license policy/)
+			assert.doesNotMatch(result[0], /external dependency/)
+		}
+	}
+})
+
+test('an OR branch which is LGPL still only counts when the package is external', () => {
+	assert.deepEqual(messages(project('MIT'), pkg('external', 'dep', '1.0.0', 'AGPL-3.0-only OR LGPL-3.0-only')), [])
+	assert.match(
+		messages(project('MIT'), pkg('bundled', 'dep', '1.0.0', 'AGPL-3.0-only OR LGPL-3.0-only'))[0],
+		/may only be shipped as an external dependency/,
+	)
 })
 
 // A correction is only reached when the declaration itself is not valid SPDX, so the real declarations must qualify
