@@ -19,6 +19,17 @@ export const KNOWN_PACKAGE_LICENSES = {
 	// Readme.md "## License" section in the published tarball, and a LICENSE added to
 	// https://github.com/component/bind after this version was published
 	'component-bind@1.0.0': 'MIT',
+	// COPYING in the published tarball is the Boost Software License 1.0 with the notice retention paragraph removed,
+	// so it imposes strictly less than BSL-1.0 and recording it as that can only ever overstate its obligations.
+	// https://github.com/russellmcc/node-binpack
+	'binpack@0.1.0': 'BSL-1.0',
+	// cycle.js in the published tarball carries "Public Domain." in its header comment, and the author has since
+	// added "license": "Public-Domain" to https://github.com/dscape/cycle
+	'cycle@1.0.3': 'Public-Domain',
+	// component.json and bower.json both declare "MIT" in the published tarball, only package.json omits it,
+	// https://github.com/component/emitter (1.1.2 republished from https://github.com/sindresorhus/component-emitter)
+	'emitter-component@1.1.1': 'MIT',
+	'emitter-component@1.1.2': 'MIT',
 	// LICENSE, "The MIT License (MIT)", in the published tarball, https://github.com/changchang/seq-queue
 	'seq-queue@0.0.5': 'MIT',
 	// license, "MIT License", in the published tarball, https://github.com/fabiospampinato/atomically

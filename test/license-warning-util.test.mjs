@@ -6,7 +6,7 @@ import {
 	LicensePolicyError,
 	SUPPORTED_PROJECT_LICENSES,
 } from '../scripts/lib/license-warning-util.js'
-import { CORRECTED_PACKAGE_LICENSES } from '../scripts/lib/known-package-licenses.js'
+import { CORRECTED_PACKAGE_LICENSES, KNOWN_PACKAGE_LICENSES } from '../scripts/lib/known-package-licenses.js'
 import parse from 'spdx-expression-parse'
 
 const pkg = (kind, name, version, declaredLicense) => ({
@@ -396,5 +396,28 @@ test('a correction can never launder a license the package validly declares', ()
 test('every corrected license is itself valid SPDX', () => {
 	for (const [key, license] of Object.entries(CORRECTED_PACKAGE_LICENSES)) {
 		assert.doesNotThrow(() => parse(license), `${key} corrected to ${license}`)
+	}
+})
+
+// SPDX has no identifier for a public domain dedication, so it is matched as the literal declaration instead
+test('accepts a public domain dedication under every project license', () => {
+	for (const projectLicense of SUPPORTED_PROJECT_LICENSES) {
+		assert.deepEqual(dependencyMessages(projectLicense, 'Public-Domain'), [], `under ${projectLicense}`)
+	}
+	assert.deepEqual(dependencyMessages('MIT', 'MIT OR Public-Domain'), [])
+	// Only the exact hyphenated form, a free text variant is still reported rather than guessed at
+	assert.match(dependencyMessages('MIT', 'Public Domain')[0], /unparseable license declaration/)
+})
+
+test('allows the Boost license under every project license', () => {
+	for (const projectLicense of SUPPORTED_PROJECT_LICENSES) {
+		assert.deepEqual(dependencyMessages(projectLicense, 'BSL-1.0'), [], `under ${projectLicense}`)
+	}
+})
+
+// Everything the list resolves must be usable by the policy, or an entry silently fails to help
+test('every known package license is understood by the policy', () => {
+	for (const [key, license] of Object.entries(KNOWN_PACKAGE_LICENSES)) {
+		assert.deepEqual(dependencyMessages('MIT', license), [], `${key} declared as ${license}`)
 	}
 })
