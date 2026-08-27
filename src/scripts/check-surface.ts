@@ -2,27 +2,41 @@
 // The zx shebang doesn't resolve dependencies correctly
 import 'zx/globals'
 
-import path from 'path'
-import { validateSurfaceManifest } from '@companion-surface/base'
-import { findModuleDir, readUTF8File } from './lib/build-util.js'
+import { createRequire } from 'node:module'
+import { findModuleDir } from './lib/build-util.js'
+import { checkPackage } from './lib/check-util.js'
+import { LicensePolicyError } from './lib/license-warning-util.js'
+import { ignoreLicenseRules } from './lib/cli-options.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
 }
 
-// const toolsDir = path.join(__dirname, '..')
-const toolsDir = await findModuleDir(import.meta.resolve('@companion-module/tools'))
-const frameworkDir = await findModuleDir(import.meta.resolve('@companion-surface/base'))
+if (argv.help) {
+	console.log('Usage: companion-surface-check [--ignore-license-rules]')
+	console.log('Checks the companion surface module')
+	console.log('  --ignore-license-rules: Report license policy issues as warnings instead of failing')
+	process.exit(0)
+}
+
+const { validateSurfaceManifest } = await import('@companion-surface/base')
+const require = createRequire(import.meta.url)
+const toolsDir = await findModuleDir(require.resolve('@companion-module/tools'))
+const frameworkDir = await findModuleDir(require.resolve('@companion-surface/base'))
 console.log(`Checking for: ${process.cwd()}`)
 
 console.log(`Tools path: ${toolsDir}`)
 console.log(`Framework path: ${frameworkDir}`)
 
-const manifestJson = JSON.parse(await readUTF8File(path.resolve('./companion/manifest.json')))
-
 try {
-	validateSurfaceManifest(manifestJson, false)
+	await checkPackage({
+		validateManifest: validateSurfaceManifest,
+		ignoreLicenseRules: ignoreLicenseRules(argv),
+	})
 } catch (e) {
-	console.error('Manifest validation failed', e)
-	process.exit(1)
+	if (e instanceof LicensePolicyError) process.exitCode = 1
+	else {
+		console.error('Manifest validation failed', e)
+		process.exit(1)
+	}
 }
