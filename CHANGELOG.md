@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.1.0](https://github.com/bitfocus/companion-module-tools/compare/v3.0.2...v3.1.0) (2026-08-28)
+
+
+### Features
+
+* add node26 tsconfig ([bb73011](https://github.com/bitfocus/companion-module-tools/commit/bb7301104fd641dc3dfda0bd7abef4dc36870fb5))
+* Replace license-file generation after esbuild migration ([#112](https://github.com/bitfocus/companion-module-tools/issues/112)) ([7819905](https://github.com/bitfocus/companion-module-tools/commit/7819905a47f3a357a4fe8e1b6ed117b617e3f2cc))
+* warn about restricted module licenses ([#113](https://github.com/bitfocus/companion-module-tools/issues/113)) ([b1cc996](https://github.com/bitfocus/companion-module-tools/commit/b1cc996bc1201f796e0e1afa26f29822bfff260f))
+
+
 ## [3.0.2](https://github.com/bitfocus/companion-module-tools/compare/v3.0.1...v3.0.2) (2026-06-19)
 
 
