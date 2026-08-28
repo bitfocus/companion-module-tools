@@ -492,6 +492,8 @@ test('the declarations the corrections exist for are genuinely unparseable', () 
 		['url-template@2.0.8', 'BSD'],
 		['xml-escape@1.1.0', 'MIT License'],
 		['qrcode-terminal@0.12.0', 'Apache 2.0'],
+		['ssl-root-cas@1.3.1', 'Apache2'],
+		['json-schema@0.2.3', '(AFLv2.1 OR BSD)'],
 	]) {
 		assert.ok(CORRECTED_PACKAGE_LICENSES[key], `${key} must have a correction`)
 		assert.throws(() => parse(declaration), `${declaration} must not be valid SPDX`)
