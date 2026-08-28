@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.0](https://github.com/bitfocus/companion-module-tools/compare/v2.7.2...v2.8.0) (2026-08-28)
+
+
+### Features
+
+* backport license validator ([d26e43c](https://github.com/bitfocus/companion-module-tools/commit/d26e43cd581824f37f95099342bf015e6097b9f7))
+
+
 ## [2.7.2](https://github.com/bitfocus/companion-module-tools/compare/v2.7.1...v2.7.2) (2026-05-11)
 
 
