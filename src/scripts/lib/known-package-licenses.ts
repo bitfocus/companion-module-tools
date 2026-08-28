@@ -64,6 +64,13 @@ export const CORRECTED_PACKAGE_LICENSES: Record<string, string> = {
 	// Declares "Apache 2.0" through the deprecated licenses array. LICENSE is the Apache License 2.0, followed by an
 	// MIT notice covering the QR library vendored into vendor/QRCode, whose text the inventory collects as well.
 	'qrcode-terminal@0.12.0': 'Apache-2.0',
+	// Declares "Apache2", which is neither the identifier nor the name. LICENSE is the verbatim Apache License 2.0
+	// including its appendix, with no NOTICE file to propagate, https://git.coolaj86.com/coolaj86/ssl-root-cas.js
+	'ssl-root-cas@1.3.1': 'Apache-2.0',
+	// Declares the pair through the deprecated licenses array as "AFLv2.1" and "BSD", each linking a line of the Dojo
+	// LICENSE the package is covered by. That file names its BSD half "BSD 3-Clause \"New\" License", including the
+	// clause forbidding use of the Dojo Foundation's name to endorse derived products, https://github.com/kriszyp/json-schema
+	'json-schema@0.2.3': '(AFL-2.1 OR BSD-3-Clause)',
 }
 
 export function correctedPackageLicense(name: string | undefined, version: string | undefined): string | undefined {
