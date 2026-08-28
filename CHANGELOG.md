@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.8.0](https://github.com/bitfocus/companion-module-tools/compare/v2.7.2...v2.8.0) (2026-08-28)
+
+
+### Features
+
+* backport license validator ([d26e43c](https://github.com/bitfocus/companion-module-tools/commit/d26e43cd581824f37f95099342bf015e6097b9f7))
+
+
+### Bug Fixes
+
+* add a couple more libraries to known licenses ([37f4c71](https://github.com/bitfocus/companion-module-tools/commit/37f4c718fdc803b91830c0fb1027a51012d7c715))
+* add more known licnses ([edaf333](https://github.com/bitfocus/companion-module-tools/commit/edaf333a82a8d293ed10e8e26c812dd217d9a1c7))
+* allow LGPL libraries when marked as external ([a7418c2](https://github.com/bitfocus/companion-module-tools/commit/a7418c2e21828373fa6a6d9d3616c947b81b2177))
+* another couple of known licenses ([bd71508](https://github.com/bitfocus/companion-module-tools/commit/bd7150815ea95691cb3b636a0d72cf888fab52fb))
+* fixup some incorrect SPDX via hardcoded map ([4160a8a](https://github.com/bitfocus/companion-module-tools/commit/4160a8a0d61d6ca6badf19c626119788efd64957))
+* tolerate unknown licenses in OR conditions ([c16a34f](https://github.com/bitfocus/companion-module-tools/commit/c16a34f5200a9a6459b36779d3cb123fd8616a55))
+
 ## [2.7.2](https://github.com/bitfocus/companion-module-tools/compare/v2.7.1...v2.7.2) (2026-05-11)
 
 
