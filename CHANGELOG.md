@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.1.0](https://github.com/bitfocus/companion-module-tools/compare/v3.0.2...v3.1.0) (2026-08-28)
+
+
+### Features
+
+* add node26 tsconfig ([bb73011](https://github.com/bitfocus/companion-module-tools/commit/bb7301104fd641dc3dfda0bd7abef4dc36870fb5))
+* expand license checker to allow gpl when module is declared as gpl ([c2707cb](https://github.com/bitfocus/companion-module-tools/commit/c2707cbebcadeb2d97e63acdc27d12585e2d7c77))
+* Replace license-file generation after esbuild migration ([#112](https://github.com/bitfocus/companion-module-tools/issues/112)) ([7819905](https://github.com/bitfocus/companion-module-tools/commit/7819905a47f3a357a4fe8e1b6ed117b617e3f2cc))
+* warn about restricted module licenses ([#113](https://github.com/bitfocus/companion-module-tools/issues/113)) ([b1cc996](https://github.com/bitfocus/companion-module-tools/commit/b1cc996bc1201f796e0e1afa26f29822bfff260f))
+
+
+### Bug Fixes
+
+* add a couple more libraries to known licenses ([60cebb3](https://github.com/bitfocus/companion-module-tools/commit/60cebb3c69e9e86b36f53b6d726fc93ce4774f9f))
+* add more known licenses ([e1cbf89](https://github.com/bitfocus/companion-module-tools/commit/e1cbf89df8b889a819e072956d31044145fa7cdf))
+* add some more known packages ([6dbd8eb](https://github.com/bitfocus/companion-module-tools/commit/6dbd8eb0a2349644cbe3eca8759f9db71ba9b617))
+* allow LGPL libraries when marked as external ([2a51ff4](https://github.com/bitfocus/companion-module-tools/commit/2a51ff4fd11662a8e98776aa58afd71a9926d659))
+* allow Zlib license ([0501f19](https://github.com/bitfocus/companion-module-tools/commit/0501f196de9cfa21ffd3b016473deeea8589c7b5))
+* another couple of known licenses ([a8866a9](https://github.com/bitfocus/companion-module-tools/commit/a8866a917c9eb33eba2af34952de72e5037f991b))
+* build hardcoded list of abandoned packages with confirmed licenses ([265aa8c](https://github.com/bitfocus/companion-module-tools/commit/265aa8cdfd06832689ccffca3ffdb43d727670ee))
+* fixup some incorrect SPDX via hardcoded map ([9cfbc26](https://github.com/bitfocus/companion-module-tools/commit/9cfbc2652380c37276141a3dde718f49a1876370))
+* handle old licenses array in package.json ([ae04b2e](https://github.com/bitfocus/companion-module-tools/commit/ae04b2ed4eb39a54163ef7a08dd9bb596dc55285))
+* license check for some packages with nested package.json getting misclassified ([e3d7622](https://github.com/bitfocus/companion-module-tools/commit/e3d7622e4c103b18102f94e3220c765e2c97d7b6))
+* require module code to be MIT, but supporting other licenses for distribution ([42259c6](https://github.com/bitfocus/companion-module-tools/commit/42259c6a8e1b600c3345e11b26d1843cd2b9909f))
+* tolerate unknown licenses in OR conditions ([6eeba51](https://github.com/bitfocus/companion-module-tools/commit/6eeba51a80cc4be1633092b4543b724286c48226))
+
 ## [3.0.2](https://github.com/bitfocus/companion-module-tools/compare/v3.0.1...v3.0.2) (2026-06-19)
 
 
