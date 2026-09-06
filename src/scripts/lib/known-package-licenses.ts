@@ -1,3 +1,5 @@
+import type { LicenseOverrides } from '../../license/index.js'
+
 /**
  * Packages which ship no license declaration in their package.json, but whose license has been confirmed by reading
  * what they publish. Only add an entry after checking that version yourself, and record where the license was found.
@@ -42,11 +44,6 @@ export const KNOWN_PACKAGE_LICENSES: Record<string, string> = {
 	'stubborn-fs@1.2.5': 'MIT',
 }
 
-export function knownPackageLicense(name: string | undefined, version: string | undefined): string | undefined {
-	if (!name || !version) return undefined
-	return KNOWN_PACKAGE_LICENSES[`${name}@${version}`]
-}
-
 /**
  * Packages which declare a license that is not a valid SPDX expression, mapped to what the license text they publish
  * actually is. Unlike KNOWN_PACKAGE_LICENSES this overrides what a package says about itself, so it is only consulted
@@ -73,7 +70,8 @@ export const CORRECTED_PACKAGE_LICENSES: Record<string, string> = {
 	'json-schema@0.2.3': '(AFL-2.1 OR BSD-3-Clause)',
 }
 
-export function correctedPackageLicense(name: string | undefined, version: string | undefined): string | undefined {
-	if (!name || !version) return undefined
-	return CORRECTED_PACKAGE_LICENSES[`${name}@${version}`]
+/** The overrides the module tooling applies. Other consumers of the engine carry their own. */
+export const MODULE_LICENSE_OVERRIDES: LicenseOverrides = {
+	knownPackageLicenses: KNOWN_PACKAGE_LICENSES,
+	correctedPackageLicenses: CORRECTED_PACKAGE_LICENSES,
 }

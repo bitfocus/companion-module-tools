@@ -22,6 +22,7 @@
 	},
 	"exports": {
 		".": "./dist/index.js",
+		"./license": "./dist/license/index.js",
 		"./eslint/config.mjs": "./dist/eslint/config.mjs",
 		"./scripts/*.js": "./dist/scripts/*.js",
 		"./tsconfig/node22/recommended.json": "./tsconfig/node22/recommended.json",

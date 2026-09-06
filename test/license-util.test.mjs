@@ -582,6 +582,6 @@ test('reports virtual and outside metafile inputs without treating them as proje
 	)
 	assert.deepEqual(collection.diagnostics, [
 		'Ignoring virtual esbuild input: <stdin>',
-		'Ignoring esbuild input outside module directory: ../outside.js',
+		`Ignoring bundle input outside the project: ${path.resolve(projectDir, '../outside.js')}`,
 	])
 })
