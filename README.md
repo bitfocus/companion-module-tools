@@ -37,6 +37,18 @@ what they publish, so open a PR there if you hit one. A license a package declar
 
 Pass `--ignore-license-rules` to report license problems as warnings instead of failing the command.
 
+## Native prebuilds
+
+When building, every native (`.node`) binary in the package is checked to make sure each native library has binaries
+for all the platforms Companion supports: `linux-x64`, `linux-arm64`, `win32-x64`, `win32-arm64`, `darwin-x64` and
+`darwin-arm64`. A universal macOS binary counts for both macOS architectures.
+
+The platform of each binary is read from the file itself, so any layout is supported (`pkg-prebuilds`, `prebuildify`
+and per-platform packages). Libraries which only ship a binary for the build machine (eg via `prebuild-install` or
+per-platform optional dependencies) will fail this check, as the module would not work on other platforms.
+
+Pass `--ignore-prebuild-rules` to report missing platforms as warnings instead of failing the build.
+
 ## Upgrading from v1.x to v2.0
 
 v2.0 of this library includes some breaking changes to how eslint and prettier handled. Instead of it being installed as a dependency and being directly usable by modules, it has to be explicitly installed by modules.

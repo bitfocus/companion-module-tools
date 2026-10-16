@@ -4,19 +4,23 @@ import 'zx/globals'
 
 import { buildPackage } from './lib/build-util.js'
 import { LicensePolicyError } from './lib/license-warning-util.js'
-import { ignoreLicenseRules } from './lib/cli-options.js'
+import { PrebuildCoverageError } from './lib/prebuild-check-util.js'
+import { ignoreLicenseRules, ignorePrebuildRules } from './lib/cli-options.js'
 
 if (process.platform === 'win32') {
 	usePowerShell() // to enable powershell
 }
 
 if (argv.help) {
-	console.log('Usage: companion-module-build [--dev] [--prerelease] [--ignore-license-rules]')
+	console.log('Usage: companion-module-build [--dev] [--prerelease] [--ignore-license-rules] [--ignore-prebuild-rules]')
 	console.log('Builds the companion connection module')
 	console.log('  --dev: Build in development mode. This will not minify the code, making it easier to debug.')
 	console.log('  --prerelease: Build in prerelease mode. This gets added as metadata to the manifest')
 	console.log('  --output <filename>: Output to a specific filename, without a file extension')
 	console.log('  --ignore-license-rules: Report license policy issues as warnings instead of failing')
+	console.log(
+		'  --ignore-prebuild-rules: Report native libraries missing binaries for a required platform as warnings instead of failing',
+	)
 	process.exit(0)
 }
 
@@ -27,8 +31,9 @@ const { validateManifest } = await import('@companion-module/base/manifest').cat
 try {
 	await buildPackage('@companion-module/base', validateManifest, 'connection', '>=1.4.0 <3.0.0', {
 		ignoreLicenseRules: ignoreLicenseRules(argv),
+		ignorePrebuildRules: ignorePrebuildRules(argv),
 	})
 } catch (e) {
-	if (e instanceof LicensePolicyError) process.exitCode = 1
+	if (e instanceof LicensePolicyError || e instanceof PrebuildCoverageError) process.exitCode = 1
 	else throw e
 }

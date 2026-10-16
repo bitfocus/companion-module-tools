@@ -16,6 +16,7 @@ import {
 import { createEsbuildOptions, loadModuleBuildDefinition } from './bundle-util.js'
 import { resolveExternalDependencies } from './external-install-util.js'
 import { enforceLicensePolicy } from './license-warning-util.js'
+import { checkPrebuildCoverage, enforcePrebuildCoverage } from './prebuild-check-util.js'
 import type { ModuleType } from './license-warning-util.js'
 import type { LegalInventory } from './license-util.js'
 
@@ -52,7 +53,7 @@ export async function buildPackage<M>(
 	validateManifest: (manifest: M, looseChecks: boolean) => void,
 	moduleType: ModuleType,
 	versionRange: string,
-	options: { ignoreLicenseRules?: boolean } = {},
+	options: { ignoreLicenseRules?: boolean; ignorePrebuildRules?: boolean } = {},
 ) {
 	// const toolsDir = path.join(__dirname, '..')
 	const moduleDir = process.cwd()
@@ -231,6 +232,10 @@ export async function buildPackage<M>(
 		}
 	}
 
+	// Ensure every native library has binaries for all the platforms we need to support
+	const prebuildReport = await checkPrebuildCoverage(packageBaseDir)
+	enforcePrebuildCoverage(prebuildReport, { ignorePrebuildRules: options.ignorePrebuildRules })
+
 	const shippedPackages = [...metafilePackages.packages]
 	if (Object.keys(packageJson.dependencies).length) {
 		shippedPackages.push(...(await collectInstalledPackages(path.join(packageBaseDir, 'node_modules'))))
@@ -240,7 +245,7 @@ export async function buildPackage<M>(
 		console.warn(`License inventory: ${diagnostic}`)
 	}
 	await writeLegalArtifacts(packageBaseDir, legalInventory)
-	enforceLegalInventory(legalInventory, options)
+	enforceLegalInventory(legalInventory, { ignoreLicenseRules: options.ignoreLicenseRules })
 
 	// Create tgz of the build
 	let tgzFile = toSanitizedDirname(`${manifestJson.id}-${manifestJson.version}`)
