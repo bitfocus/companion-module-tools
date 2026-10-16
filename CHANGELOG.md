@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/bitfocus/companion-module-tools/compare/v3.1.1...v3.2.0) (2026-10-16)
+
+
+### Features
+
+* verify native prebuilds cover all supported platforms during build ([#119](https://github.com/bitfocus/companion-module-tools/issues/119)) ([86bce12](https://github.com/bitfocus/companion-module-tools/commit/86bce12b4172092f482241fd3cc1a58e9f39480c))
+
 ## [3.1.1](https://github.com/bitfocus/companion-module-tools/compare/v3.1.0...v3.1.1) (2026-10-01)
 
 
