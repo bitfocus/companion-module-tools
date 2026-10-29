@@ -19,7 +19,7 @@
 		"test": "node --test test/*.test.mjs"
 	},
 	"engines": {
-		"node": "^18.18 || ^22.18"
+		"node": "^18.18 || ^22.18 || ^26"
 	},
 	"files": [
 		"eslint",

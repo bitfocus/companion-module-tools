@@ -14,6 +14,23 @@ More information on this command is available [on the wiki](https://github.com/b
 
 Generate the new format manifest from an old `package.json`.
 
+## Node.js versions
+
+Modules declare the Node.js version they run on with `runtime.type` in `companion/manifest.json`. New modules, and
+existing ones when convenient, are recommended to use `node26`.
+
+A matching TypeScript config is available for each version, and `node26` is the recommended one:
+
+```json
+{
+	"extends": "@companion-module/tools/tsconfig/node26/recommended.json"
+}
+```
+
+It uses `"module": "node20"`, so a file is compiled as ESM or CommonJS according to the `type` in its nearest
+`package.json`. It targets ES2025, which requires TypeScript 6 or later. The `node18` and `node22` configs remain
+available for modules that have not moved yet.
+
 ## Licensing
 
 A module has two licenses, and they are not the same thing:
