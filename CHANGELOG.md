@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/bitfocus/companion-module-tools/compare/v2.8.0...v2.9.0) (2026-10-29)
+
+
+### Features
+
+* support node26 ([51caa8c](https://github.com/bitfocus/companion-module-tools/commit/51caa8c05b054537184677e74292c9631d0052c5))
+
 ## [2.8.0](https://github.com/bitfocus/companion-module-tools/compare/v2.7.2...v2.8.0) (2026-08-28)
 
 
