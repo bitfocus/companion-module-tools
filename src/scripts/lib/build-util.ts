@@ -203,6 +203,11 @@ export async function buildPackage<M>(
 	if (Object.keys(packageJson.dependencies).length) {
 		await fs.writeFile(path.join(packageBaseDir, 'yarn.lock'), '')
 		await $`yarn --cwd ${packageBaseDir} install --no-immutable`
+
+		// yarn leaves behind state/cache which is not needed at runtime
+		await fs.remove(path.join(packageBaseDir, '.yarn'))
+		await fs.remove(path.join(packageBaseDir, 'node_modules/.yarn-state.yml'))
+		await fs.remove(path.join(packageBaseDir, 'node_modules/.bin'))
 	}
 
 	// Prune any excessive prebuilds
