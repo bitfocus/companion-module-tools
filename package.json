@@ -40,7 +40,7 @@
 		"semver": "^7.7.4",
 		"spdx-expression-parse": "^5.0.0",
 		"tar": "^7.5.9",
-		"webpack": "^5.105.2",
+		"webpack": "5.109.2",
 		"webpack-cli": "^6.0.1",
 		"zx": "^8.8.5"
 	},
