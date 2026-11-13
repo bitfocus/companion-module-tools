@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2.1](https://github.com/bitfocus/companion-module-tools/compare/v3.2.0...v3.2.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* exclude yarn install state and node_modules/.bin from built packages ([706fac6](https://github.com/bitfocus/companion-module-tools/commit/706fac6d6dcb3596273eca01fe6308ff874057f8))
+* node engines ([3928eb5](https://github.com/bitfocus/companion-module-tools/commit/3928eb5f34313dc6546f4ce2f238af1f0e7227e4))
+
 ## [3.2.0](https://github.com/bitfocus/companion-module-tools/compare/v3.1.1...v3.2.0) (2026-10-16)
 
 
