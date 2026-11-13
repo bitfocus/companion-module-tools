@@ -18,7 +18,7 @@
 		"companion-surface-check": "./dist/scripts/check-surface.js"
 	},
 	"engines": {
-		"node": "^22.18"
+		"node": "^22.22 || ^26.13"
 	},
 	"exports": {
 		".": "./dist/index.js",
